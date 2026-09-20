@@ -62,7 +62,7 @@ src/
     clientes/                 EP-03 — CRUD de clientes (admin)
     inventario/                EP-05 — catálogo de insumos, reabastecimiento, descuento automático
       inventario.instance.js    Instancia compartida del service, reusada por citas/ sin duplicar lógica
-    reportes/ notificaciones/  Todavía en stub — fuera de alcance de Fase 2 (ver PLAN_FASE2.md)
+    reportes/ notificaciones/  Todavía en stub — fuera de alcance de Fase 2
   middlewares/auth.middleware.js   requireAuth/requireRole (JWT) — implementado (EP-01)
   services/                  Infraestructura compartida entre módulos: correo, notificaciones
   helpers/                   ApiError, errorHandler, validate (Ajv)
@@ -81,7 +81,7 @@ scripts/db/setup.mjs        Crea la BD local y aplica schema + seed
 | `citas` | ✅ Completo | Incluye el "proceso complejo" de la rúbrica: atender -> descuento de insumos -> alerta de stock bajo, en una sola transacción. |
 | `clientes` | ✅ Completo | CRUD básico bajo administración. |
 | `inventario` | ✅ Completo | Catálogo + reabastecimiento + función de descuento reutilizada por `citas`. |
-| `reportes`, `notificaciones` (centro in-app) | ⏳ Pendiente | Planeado para Sprint 3 / Fase 3 según `PLAN_FASE2.md`. El envío de correos ya funciona (`notification.service.js`); falta el endpoint para listar/marcar leídas. |
+| `reportes`, `notificaciones` (centro in-app) | ⏳ Pendiente | Planeado para Sprint 3 / Fase 3. El envío de correos ya funciona (`notification.service.js`); falta el endpoint para listar/marcar leídas. |
 
 **Nota sobre correo en desarrollo:** si no configurás `SMTP_USER`/`SMTP_PASSWORD` en tu
 `.env.dev`, el envío de correo falla silenciosamente (con timeout de 5s) y queda

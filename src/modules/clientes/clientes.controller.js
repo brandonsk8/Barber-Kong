@@ -46,3 +46,19 @@ export async function deactivate(req, res, next) {
     next(err);
   }
 }
+
+export async function activate(req, res, next) {
+  try {
+    res.json(await service.activate(req.params.id));
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function historial(req, res, next) {
+  try {
+    res.json(await service.historial(req.params.id));
+  } catch (err) {
+    next(err);
+  }
+}
