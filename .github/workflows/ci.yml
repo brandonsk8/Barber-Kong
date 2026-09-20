@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop, main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Write .env.dev
+        run: |
+          cat <<EOF > .env.dev
+          PORT=3000
+          DB_HOST=localhost
+          DB_PORT=5432
+          DB_NAME=barber_kong
+          DB_USER=postgres
+          DB_PASSWORD=postgres
+          JWT_SECRET=ci-secret
+          SMTP_HOST=localhost
+          SMTP_PORT=587
+          SMTP_FROM="Barber Kong <no-reply@barberkong.com>"
+          EOF
+
+      - name: Validate schema + seed apply cleanly
+        run: npm run db:setup
+
+      - name: Boot the server as a smoke check
+        run: |
+          node --env-file=.env.dev ./index.js &
+          SERVER_PID=$!
+          sleep 2
+          curl -sf http://localhost:3000/api/health
+          kill $SERVER_PID
