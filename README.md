@@ -54,20 +54,41 @@ src/
   server/app.js              Configuración de Express (middlewares, health check, 404, errores)
   modules/                   Un módulo por dominio del sistema — TODO desarrollo nuevo va aquí
     index.js                 Escanea *.routes.js recursivamente y los monta solo
-    servicios/                Módulo de referencia — copiar este patrón para los demás
-      servicios.routes.js       Router de Express (export default)
-      servicios.controller.js   Traduce HTTP <-> service
-      servicios.service.js      Lógica de negocio (factory: createXService({ repository }))
-      servicios.repository.js   Único lugar con SQL de este módulo (parametrizado, sin ORM)
-      servicios.schema.js       Validación de entrada (Ajv)
-    auth/ citas/ clientes/ inventario/ reportes/ notificaciones/   Stubs — mismo patrón que servicios/
-  middlewares/auth.middleware.js   requireAuth/requireRole (JWT) — stub, lo implementa EP-01
+    servicios/                Módulo de referencia — mismo patrón en todos los demás
+    auth/                     EP-01 — login, registro, 2FA, recuperar/restablecer contraseña, /me
+    barberos/                 Alta/edición/baja de barberos (UC-22/23/24) + disponibilidad por fecha
+    citas/                    EP-02 — agendar/reprogramar/cancelar, agenda del barbero, walk-in,
+                               marcar atendida (dispara el descuento de inventario en transacción)
+    clientes/                 EP-03 — CRUD de clientes (admin)
+    inventario/                EP-05 — catálogo de insumos, reabastecimiento, descuento automático
+      inventario.instance.js    Instancia compartida del service, reusada por citas/ sin duplicar lógica
+    reportes/ notificaciones/  Todavía en stub — fuera de alcance de Fase 2 (ver PLAN_FASE2.md)
+  middlewares/auth.middleware.js   requireAuth/requireRole (JWT) — implementado (EP-01)
   services/                  Infraestructura compartida entre módulos: correo, notificaciones
   helpers/                   ApiError, errorHandler, validate (Ajv)
   config/                    db.js (pool de pg), logger.js (winston)
 resources/db/               schema.sql y seed.sql — única fuente de verdad del esquema
 scripts/db/setup.mjs        Crea la BD local y aplica schema + seed
 ```
+
+### Estado de los módulos (Fase 2)
+
+| Módulo | Estado | Notas |
+|---|---|---|
+| `servicios` | ✅ Completo | Ya venía del scaffold inicial. |
+| `auth` | ✅ Completo | JWT, bcrypt, 2FA por código de 6 dígitos (10 min), recuperación de contraseña (1 hora). |
+| `barberos` | ✅ Completo | Alta crea también el `users` con role='barbero'; disponibilidad calculada a partir de `citas`. |
+| `citas` | ✅ Completo | Incluye el "proceso complejo" de la rúbrica: atender -> descuento de insumos -> alerta de stock bajo, en una sola transacción. |
+| `clientes` | ✅ Completo | CRUD básico bajo administración. |
+| `inventario` | ✅ Completo | Catálogo + reabastecimiento + función de descuento reutilizada por `citas`. |
+| `reportes`, `notificaciones` (centro in-app) | ⏳ Pendiente | Planeado para Sprint 3 / Fase 3 según `PLAN_FASE2.md`. El envío de correos ya funciona (`notification.service.js`); falta el endpoint para listar/marcar leídas. |
+
+**Nota sobre correo en desarrollo:** si no configurás `SMTP_USER`/`SMTP_PASSWORD` en tu
+`.env.dev`, el envío de correo falla silenciosamente (con timeout de 5s) y queda
+registrado como advertencia en el log — el flujo principal (login, agendar cita, etc.)
+no se bloquea. Para ver el contenido real de un código 2FA o un enlace de recuperación
+en desarrollo sin SMTP configurado, consultá la tabla `notificaciones` directamente:
+`SELECT mensaje FROM notificaciones ORDER BY created_at DESC LIMIT 1;`
 
 ### Cómo agregar un módulo nuevo
 

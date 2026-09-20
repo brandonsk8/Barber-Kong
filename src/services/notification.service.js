@@ -7,6 +7,7 @@
 import { randomUUID } from 'node:crypto';
 import { query } from '../config/db.js';
 import { sendMail } from './mailer.js';
+import { logger } from '../config/logger.js';
 
 export async function notify({ userId, email, tipo, titulo, mensaje }) {
   await query(
@@ -15,6 +16,13 @@ export async function notify({ userId, email, tipo, titulo, mensaje }) {
   );
 
   if (email) {
-    await sendMail({ to: email, subject: titulo, html: `<p>${mensaje}</p>` });
+    // El envío de correo nunca debe tumbar el flujo principal (login, agendar cita,
+    // etc.): si el SMTP no está configurado o falla, el usuario igual completa su
+    // acción y ve la notificación dentro del sistema (tabla `notificaciones`, UC-26).
+    try {
+      await sendMail({ to: email, subject: titulo, html: `<p>${mensaje}</p>` });
+    } catch (err) {
+      logger.warn('No se pudo enviar el correo de notificación.', { tipo, email, error: err.message });
+    }
   }
 }
