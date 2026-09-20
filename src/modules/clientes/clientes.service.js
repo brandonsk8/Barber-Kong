@@ -27,18 +27,5 @@ export function createClientesService({ repository }) {
       if (!cliente) throw ApiError.notFound('Cliente no encontrado.');
       return cliente;
     },
-
-    async activate(id) {
-      const cliente = await repository.setActive(id, true);
-      if (!cliente) throw ApiError.notFound('Cliente no encontrado.');
-      return cliente;
-    },
-
-    async historial(id) {
-      // Verifica que el cliente exista antes de consultar el historial (UC-10:
-      // precondición "el cliente existe en el sistema").
-      await this.getById(id);
-      return repository.findHistorial(id);
-    },
   };
 }

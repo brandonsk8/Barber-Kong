@@ -62,18 +62,3 @@ export async function setActive(id, isActive) {
   );
   return rows[0] || null;
 }
-
-// UC-10: historial de citas y servicios recibidos por el cliente.
-export async function findHistorial(id) {
-  const { rows } = await query(
-    `SELECT c.id, c.fecha, c.hora_inicio, c.hora_fin, c.estado, c.es_walkin,
-            s.nombre AS servicio, b.nombre AS barbero
-     FROM citas c
-     JOIN servicios s ON s.id = c.servicio_id
-     JOIN barberos b ON b.id = c.barbero_id
-     WHERE c.cliente_id = $1
-     ORDER BY c.fecha DESC, c.hora_inicio DESC`,
-    [id]
-  );
-  return rows;
-}

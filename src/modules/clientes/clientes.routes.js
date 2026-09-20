@@ -10,10 +10,8 @@ router.use(requireAuth, requireRole('admin'));
 
 router.get('/', controller.list);
 router.get('/:id', controller.getOne);
-router.get('/:id/historial', controller.historial);
 router.post('/', controller.create);
 router.put('/:id', controller.update);
-router.put('/:id/activar', controller.activate);
 router.delete('/:id', controller.deactivate);
 
 export default router;
