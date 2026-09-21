@@ -1,12 +1,13 @@
 #!/usr/bin/env node
-// Crea la base de datos en el Postgres local (si no existe) y aplica
-// resources/db/schema.sql + resources/db/seed.sql. Sin Docker, sin ORM: asume que ya
-// tienes un servidor Postgres corriendo localmente y credenciales con permiso de
-// CREATEDB (el usuario de tu instalación local sirve).
+// Crea la base de datos en el Postgres local (si no existe), aplica las migraciones
+// versionadas de resources/db/migrations/*.sql y siembra resources/db/seed.sql. Sin
+// Docker, sin ORM: asume que ya tienes un servidor Postgres corriendo localmente y
+// credenciales con permiso de CREATEDB (el usuario de tu instalación local sirve).
 //
 // Uso:
-//   npm run db:setup           -> crea/actualiza el esquema y siembra datos de ejemplo
+//   npm run db:setup           -> crea/actualiza el esquema (migraciones) y siembra datos de ejemplo
 //   npm run db:reset           -> DROP + recrea todo desde cero
+//   npm run db:migrate         -> solo aplica migraciones pendientes, sin seed
 //
 // Variables de entorno esperadas (ver .env.example): DB_HOST, DB_PORT, DB_NAME, DB_USER,
 // DB_PASSWORD, NODE_ENV.
@@ -15,6 +16,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import pg from 'pg';
+import { runMigrations } from './migrate.mjs';
 
 const { Client } = pg;
 
@@ -74,7 +76,7 @@ async function main() {
   await client.connect();
   try {
     await applyResetIfRequested(client);
-    await runSqlFile(client, 'schema.sql');
+    await runMigrations(client);
 
     if (SKIP_SEED) {
       console.log('Seed omitido (--no-seed o NODE_ENV=production).');

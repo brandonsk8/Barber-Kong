@@ -15,7 +15,8 @@ módulos vía `mountModules()`.
 ## Comandos
 
 - `npm run dev` — desarrollo con recarga automática, contra `.env.dev`
-- `npm run db:setup` — crea la BD local si no existe y aplica `resources/db/schema.sql` + `seed.sql`
+- `npm run db:setup` — crea la BD local si no existe, aplica migraciones pendientes de `resources/db/migrations/` y siembra `seed.sql`
+- `npm run db:migrate` — solo aplica migraciones pendientes (sin seed, sin crear la BD)
 - `npm run db:reset` — `DROP SCHEMA public CASCADE` y recrea todo desde cero
 - `node --check <archivo>` — validación de sintaxis (ESM, funciona directo)
 
@@ -79,16 +80,24 @@ plantilla antes de escribir un módulo nuevo desde cero.
 - Nada de queries SQL en controllers o services; nada de lógica de negocio en el
   controller ni en el repository.
 
-## Base de datos: sin ORM
+## Base de datos: sin ORM, con migraciones versionadas
 
-- Esquema completo y único: [resources/db/schema.sql](./resources/db/schema.sql) — DDL
-  plano, idempotente (`CREATE TABLE IF NOT EXISTS`, `CREATE INDEX IF NOT EXISTS`). Si
-  cambia el modelo de datos, se edita este archivo directamente; no hay migraciones
-  encadenadas.
+- Esquema versionado en [resources/db/migrations/](./resources/db/migrations) — un
+  archivo `NNNN_descripcion.sql` por migración, DDL plano e idempotente
+  (`CREATE TABLE IF NOT EXISTS`, `CREATE INDEX IF NOT EXISTS`). Si cambia el modelo de
+  datos, **se agrega un archivo nuevo** (`0005_...sql`), nunca se edita uno ya aplicado
+  en algún ambiente compartido.
+- `scripts/db/migrate.mjs` (`runMigrations()`) aplica, en orden y dentro de una
+  transacción por archivo, solo las migraciones que todavía no estén registradas en la
+  tabla `schema_migrations` (una fila por archivo aplicado, con `version` = nombre del
+  archivo). Es lo que hace que sean "versionadas": el estado real de cada entorno
+  (dev/test/prod) queda en esa tabla, no en la memoria de quien las corrió.
 - Datos de ejemplo: [resources/db/seed.sql](./resources/db/seed.sql), con
-  `ON CONFLICT DO NOTHING` para poder reaplicarse sin duplicar.
-- `scripts/db/setup.mjs` aplica ambos contra el Postgres local (crea la base si hace
-  falta). Sin Docker: se asume un servidor Postgres ya instalado y corriendo.
+  `ON CONFLICT DO NOTHING` para poder reaplicarse sin duplicar. No es una migración (no
+  se versiona en `schema_migrations`): es data de demo, se omite en producción
+  (`--no-seed` o `NODE_ENV=production`).
+- `scripts/db/setup.mjs` crea la BD si hace falta, corre `runMigrations()` y siembra.
+  Sin Docker: se asume un servidor Postgres ya instalado y corriendo.
 - Transacciones: cuando una operación necesita más de un `INSERT`/`UPDATE` que deben
   confirmarse juntos o ninguno (el caso más claro: marcar una cita como atendida +
   descontar el insumo del inventario), usar `getClient()` de `src/config/db.js` con
