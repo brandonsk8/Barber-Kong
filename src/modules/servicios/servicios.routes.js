@@ -15,4 +15,10 @@ router.post('/', requireAuth, requireRole('admin'), controller.create);
 router.put('/:id', requireAuth, requireRole('admin'), controller.update);
 router.delete('/:id', requireAuth, requireRole('admin'), controller.deactivate);
 
+// UC-13 — insumos que consume el servicio. Esta asociación es la que usa
+// inventario.service.js#descontarPorServicio al marcar una cita como atendida.
+router.get('/:id/insumos', requireAuth, requireRole('admin'), controller.listInsumos);
+router.post('/:id/insumos', requireAuth, requireRole('admin'), controller.asociarInsumo);
+router.delete('/:id/insumos/:insumoId', requireAuth, requireRole('admin'), controller.quitarInsumo);
+
 export default router;
