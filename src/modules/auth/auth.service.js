@@ -127,5 +127,19 @@ export function createAuthService({ repository }) {
       if (!user) throw ApiError.notFound('Usuario no encontrado.');
       return await publicUser(user);
     },
+
+    // RF-AUT-07: 2FA es opcional, lo habilita cada usuario para su propia cuenta.
+    // Pide la contraseña actual para confirmar — es un cambio de seguridad, no un
+    // dato de perfil cualquiera, así que no basta con estar logueado.
+    async updateTwoFactor(userId, { enabled, password }) {
+      const user = await repository.findUserById(userId);
+      if (!user) throw ApiError.notFound('Usuario no encontrado.');
+
+      const matches = await bcrypt.compare(password, user.password_hash);
+      if (!matches) throw ApiError.unauthorized('Contraseña incorrecta.');
+
+      const updated = await repository.setTwoFactorEnabled(userId, enabled);
+      return await publicUser(updated);
+    },
   };
 }

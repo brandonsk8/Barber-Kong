@@ -6,6 +6,7 @@ import {
   verifyTwoFactorSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
+  updateTwoFactorSchema,
 } from './auth.schema.js';
 import { validate } from '../../helpers/validate.js';
 
@@ -65,6 +66,16 @@ export async function resetPassword(req, res, next) {
 export async function me(req, res, next) {
   try {
     const user = await service.me(req.user.id);
+    res.json({ user });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function updateTwoFactor(req, res, next) {
+  try {
+    const data = validate(updateTwoFactorSchema, req.body);
+    const user = await service.updateTwoFactor(req.user.id, data);
     res.json({ user });
   } catch (err) {
     next(err);

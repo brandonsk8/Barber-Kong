@@ -13,5 +13,6 @@ router.post('/verify-2fa', controller.verifyTwoFactor);
 router.post('/forgot-password', controller.forgotPassword);
 router.post('/reset-password', controller.resetPassword);
 router.get('/me', requireAuth, controller.me);
+router.put('/2fa', requireAuth, controller.updateTwoFactor);
 
 export default router;

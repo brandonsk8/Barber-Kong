@@ -31,6 +31,14 @@ export async function updatePasswordHash(userId, passwordHash) {
   ]);
 }
 
+export async function setTwoFactorEnabled(userId, enabled) {
+  const { rows } = await query(
+    `UPDATE users SET two_factor_enabled = $2, updated_at = now() WHERE id = $1 RETURNING *`,
+    [userId, enabled]
+  );
+  return rows[0] || null;
+}
+
 export async function createCliente({ userId, nombre, telefono, correo }) {
   const id = randomUUID();
   const { rows } = await query(
