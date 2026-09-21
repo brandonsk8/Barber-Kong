@@ -7,7 +7,10 @@ const service = createClientesService({ repository });
 
 export async function list(req, res, next) {
   try {
-    res.json(await service.list(req.query.search));
+    // BK-24 (HU-15) — ?estado=activos|inactivos|todos (default: activos, mismo
+    // comportamiento que antes). 'inactivos' es lo que necesita la pantalla de
+    // reactivación para poder listar a quién reactivar.
+    res.json(await service.list(req.query.search, req.query.estado));
   } catch (err) {
     next(err);
   }

@@ -2,8 +2,8 @@ import { ApiError } from '../../helpers/ApiError.js';
 
 export function createClientesService({ repository }) {
   return {
-    async list(search) {
-      return repository.findAll(search);
+    async list(search, estado) {
+      return repository.findAll(search, estado);
     },
 
     async getById(id) {

@@ -11,16 +11,23 @@ const BASE_SELECT = `
   FROM clientes c
 `;
 
-export async function findAll(search) {
+// BK-24 (HU-15) — `estado` deja elegir qué subconjunto traer: por defecto solo
+// activos (comportamiento previo, intacto), 'inactivos' para la pantalla de
+// reactivación y 'todos' para no perder de vista a nadie. Antes de este cambio no
+// había forma de listar/encontrar un cliente desactivado para poder reactivarlo,
+// aunque `activate`/`setActive` ya existían.
+export async function findAll(search, estado = 'activos') {
+  const filtroActivo =
+    estado === 'inactivos' ? 'c.is_active = FALSE' : estado === 'todos' ? 'TRUE' : 'c.is_active = TRUE';
   if (search) {
     const { rows } = await query(
-      `${BASE_SELECT} WHERE c.is_active = TRUE AND (c.nombre ILIKE $1 OR c.telefono ILIKE $1)
+      `${BASE_SELECT} WHERE ${filtroActivo} AND (c.nombre ILIKE $1 OR c.telefono ILIKE $1)
        ORDER BY c.nombre`,
       [`%${search}%`]
     );
     return rows;
   }
-  const { rows } = await query(`${BASE_SELECT} WHERE c.is_active = TRUE ORDER BY c.nombre`);
+  const { rows } = await query(`${BASE_SELECT} WHERE ${filtroActivo} ORDER BY c.nombre`);
   return rows;
 }
 
