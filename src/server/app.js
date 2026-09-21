@@ -13,10 +13,6 @@ export async function createApp() {
   const app = express();
 
   app.use(helmet());
-  // exposedHeaders: por default el navegador no deja leer Content-Disposition desde
-  // fetch() en una respuesta cross-origin aunque el servidor lo mande — sin esto, la
-  // descarga de reportes (PDF/Excel) llega bien pero el frontend no puede leer el
-  // nombre de archivo sugerido y cae al genérico "archivo".
   app.use(cors({ exposedHeaders: ['Content-Disposition'] }));
   app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev', {
     stream: { write: (message) => logger.http(message.trim()) },
