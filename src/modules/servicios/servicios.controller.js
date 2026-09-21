@@ -1,6 +1,6 @@
 import * as repository from './servicios.repository.js';
 import { createServiciosService } from './servicios.service.js';
-import { createServicioSchema, updateServicioSchema } from './servicios.schema.js';
+import { createServicioSchema, updateServicioSchema, asociarInsumoSchema } from './servicios.schema.js';
 import { validate } from '../../helpers/validate.js';
 
 // Composition root del módulo: aquí se arma el service con su repositorio real.
@@ -44,6 +44,32 @@ export async function update(req, res, next) {
 export async function deactivate(req, res, next) {
   try {
     res.json(await service.deactivate(req.params.id));
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function listInsumos(req, res, next) {
+  try {
+    res.json(await service.listInsumos(req.params.id));
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function asociarInsumo(req, res, next) {
+  try {
+    const data = validate(asociarInsumoSchema, req.body);
+    res.status(201).json(await service.asociarInsumo(req.params.id, data));
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function quitarInsumo(req, res, next) {
+  try {
+    await service.quitarInsumo(req.params.id, req.params.insumoId);
+    res.status(204).end();
   } catch (err) {
     next(err);
   }

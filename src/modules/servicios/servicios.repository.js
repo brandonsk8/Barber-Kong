@@ -46,3 +46,38 @@ export async function setActive(id, isActive) {
   );
   return rows[0] || null;
 }
+
+// --- UC-13: asociar insumos a servicio --------------------------------------------
+export async function findInsumosDelServicio(servicioId) {
+  const { rows } = await query(
+    `SELECT si.insumo_id, si.cantidad_consumida, i.nombre, i.unidad_medida
+     FROM servicio_insumos si
+     JOIN insumos i ON i.id = si.insumo_id
+     WHERE si.servicio_id = $1
+     ORDER BY i.nombre`,
+    [servicioId]
+  );
+  return rows;
+}
+
+// Upsert: si el insumo ya estaba asociado, solo actualiza la cantidad (no hace falta
+// quitarlo primero para corregir un valor).
+export async function asociarInsumo(servicioId, insumoId, cantidadConsumida) {
+  const { rows } = await query(
+    `INSERT INTO servicio_insumos (id, servicio_id, insumo_id, cantidad_consumida)
+     VALUES ($1, $2, $3, $4)
+     ON CONFLICT (servicio_id, insumo_id)
+     DO UPDATE SET cantidad_consumida = excluded.cantidad_consumida, updated_at = now()
+     RETURNING *`,
+    [randomUUID(), servicioId, insumoId, cantidadConsumida]
+  );
+  return rows[0];
+}
+
+export async function quitarInsumo(servicioId, insumoId) {
+  const { rowCount } = await query(
+    `DELETE FROM servicio_insumos WHERE servicio_id = $1 AND insumo_id = $2`,
+    [servicioId, insumoId]
+  );
+  return rowCount > 0;
+}
