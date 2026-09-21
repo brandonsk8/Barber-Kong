@@ -51,6 +51,22 @@ export const forgotPasswordSchema = {
   additionalProperties: false,
 };
 
+export const updateTwoFactorSchema = {
+  type: 'object',
+  properties: {
+    enabled: { type: 'boolean' },
+    password: { type: 'string', minLength: 1 },
+  },
+  required: ['enabled', 'password'],
+  additionalProperties: false,
+  errorMessage: {
+    required: {
+      enabled: 'Falta indicar si se activa o desactiva.',
+      password: 'Ingresá tu contraseña actual para confirmar.',
+    },
+  },
+};
+
 export const resetPasswordSchema = {
   type: 'object',
   properties: {
