@@ -9,6 +9,12 @@ const transporter = nodemailer.createTransport({
   port: Number(process.env.SMTP_PORT) || 587,
   secure: false,
   auth: process.env.SMTP_USER ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASSWORD } : undefined,
+  // Sin esto, un SMTP inalcanzable (típico en dev sin credenciales de Ethereal, o en
+  // una red restringida) cuelga la request para siempre en vez de fallar rápido —
+  // notification.service.js ya atrapa el error, pero necesita que efectivamente ocurra.
+  connectionTimeout: 5000,
+  greetingTimeout: 5000,
+  socketTimeout: 5000,
 });
 
 export async function sendMail({ to, subject, html }) {

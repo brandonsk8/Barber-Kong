@@ -13,7 +13,7 @@ export async function createApp() {
   const app = express();
 
   app.use(helmet());
-  app.use(cors());
+  app.use(cors({ exposedHeaders: ['Content-Disposition'] }));
   app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev', {
     stream: { write: (message) => logger.http(message.trim()) },
   }));

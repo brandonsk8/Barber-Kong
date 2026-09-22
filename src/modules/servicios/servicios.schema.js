@@ -25,3 +25,23 @@ export const updateServicioSchema = {
   },
   additionalProperties: false,
 };
+
+// UC-13
+export const asociarInsumoSchema = {
+  type: 'object',
+  properties: {
+    insumo_id: { type: 'string', format: 'uuid' },
+    cantidad_consumida: { type: 'number', exclusiveMinimum: 0 },
+  },
+  required: ['insumo_id', 'cantidad_consumida'],
+  additionalProperties: false,
+  errorMessage: {
+    required: {
+      insumo_id: 'Debes indicar qué insumo se asocia.',
+      cantidad_consumida: 'Debes indicar cuánto consume el servicio de ese insumo.',
+    },
+    properties: {
+      cantidad_consumida: 'La cantidad debe ser un número mayor que cero.',
+    },
+  },
+};

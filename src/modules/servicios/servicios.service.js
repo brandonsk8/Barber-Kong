@@ -35,5 +35,29 @@ export function createServiciosService({ repository }) {
       if (!servicio) throw ApiError.notFound('Servicio no encontrado.');
       return servicio;
     },
+
+    // UC-13: qué insumos consume un servicio. citas.service.js (EP-02) lee esta misma
+    // asociación en su propia transacción al marcar una cita como atendida — ver
+    // inventario.service.js#descontarPorServicio.
+    async listInsumos(servicioId) {
+      await this.getById(servicioId);
+      return repository.findInsumosDelServicio(servicioId);
+    },
+
+    async asociarInsumo(servicioId, { insumo_id, cantidad_consumida }) {
+      await this.getById(servicioId);
+      try {
+        return await repository.asociarInsumo(servicioId, insumo_id, cantidad_consumida);
+      } catch (err) {
+        if (err.code === '23503') throw ApiError.badRequest('Ese insumo no existe.');
+        throw err;
+      }
+    },
+
+    async quitarInsumo(servicioId, insumoId) {
+      await this.getById(servicioId);
+      const eliminado = await repository.quitarInsumo(servicioId, insumoId);
+      if (!eliminado) throw ApiError.notFound('Ese insumo no está asociado a este servicio.');
+    },
   };
 }

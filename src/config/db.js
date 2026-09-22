@@ -3,7 +3,13 @@
 import pg from 'pg';
 import { logger } from './logger.js';
 
-const { Pool } = pg;
+const { Pool, types } = pg;
+
+// Por defecto, node-postgres parsea las columnas DATE (oid 1082) a un objeto Date de
+// JS en hora UTC, que al pasar por res.json() sale como "2026-09-21T00:00:00.000Z".
+// El frontend espera fechas simples "YYYY-MM-DD" (ver utils/date.js), así que dejamos
+// el valor tal cual lo manda Postgres, sin conversión a Date.
+types.setTypeParser(types.builtins.DATE, (value) => value);
 
 export const pool = new Pool({
   host: process.env.DB_HOST,

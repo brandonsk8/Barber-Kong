@@ -1,14 +1,18 @@
-// Dueño: EP-01 — Autenticación y Cuentas (HU-01 a HU-06)
-// Seguir el patrón de src/modules/servicios/ (routes/controller/service/repository/
-// schema, SQL parametrizado a mano vía src/config/db.js, sin ORM).
-// Implementar aquí: POST /login, POST /register, POST /verify-2fa, POST /forgot-password,
-// POST /reset-password. Las rutas de alta/edición/baja de barberos (UC-22/23/24) pueden
-// vivir en este mismo módulo o en uno propio (barberos), a criterio del dueño.
+// Dueño: EP-01 — Autenticación y Cuentas (HU-01 a HU-06). Alta/edición/baja de
+// barberos (UC-22/23/24) vive en src/modules/barberos/ como módulo propio, para que
+// el cliente pueda listarlos públicamente igual que /api/servicios.
 import { Router } from 'express';
-import { ApiError } from '../../helpers/ApiError.js';
+import * as controller from './auth.controller.js';
+import { requireAuth } from '../../middlewares/auth.middleware.js';
 
 const router = Router();
 
-router.use((req, res, next) => next(ApiError.notFound('Auth: pendiente de implementar (EP-01).')));
+router.post('/register', controller.register);
+router.post('/login', controller.login);
+router.post('/verify-2fa', controller.verifyTwoFactor);
+router.post('/forgot-password', controller.forgotPassword);
+router.post('/reset-password', controller.resetPassword);
+router.get('/me', requireAuth, controller.me);
+router.put('/2fa', requireAuth, controller.updateTwoFactor);
 
 export default router;
