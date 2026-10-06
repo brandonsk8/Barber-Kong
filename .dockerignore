@@ -10,3 +10,5 @@ docs
 logs
 *.log
 docker-compose.yml
+.claude
+.mcp.json
