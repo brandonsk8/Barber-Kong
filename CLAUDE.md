@@ -127,3 +127,33 @@ usuario los reutiliza tal cual, en vez de reimplementar el envío de correo.
   como función del `service` del módulo dueño de los datos).
 - `console.log`/`console.error` como mecanismo de error: todo error relevante va a la
   bitácora (Winston) a través del `errorHandler` central.
+
+## Herramientas de IA del proyecto (skills y MCP)
+
+Configuración compartida en el repo; cada una existe por una necesidad concreta del
+proyecto, no "por tenerla".
+
+### Skills (`.claude/skills/`)
+
+| Skill | Para qué | Por qué existe |
+|---|---|---|
+| `nueva-migracion` | Cambios de esquema | Garantiza migraciones versionadas idempotentes y que nunca se edite una aplicada |
+| `nuevo-modulo` | Módulo/endpoint nuevo | Replica el patrón de capas de `servicios/` (SOLID, rol en backend, Ajv, SQL parametrizado) |
+| `revisar-reglas` | Revisar diff/PR | Checklist de las reglas duras antes de commitear o aprobar un PR |
+| `gitflow` | Ramas, commits, PR | GitFlow del equipo: commits atómicos, nada de push/PR sin autorización |
+| `verificar-entorno` | Probar un cambio | No hay tests automatizados: levanta Docker y prueba API/roles de punta a punta |
+| `revisar-ui` | Revisar pantallas | Responsive, mensajes de feedback y accesibilidad con Playwright |
+
+### Servidores MCP (`.mcp.json`)
+
+| Servidor | Para qué | Límites |
+|---|---|---|
+| `barberkong-db` (Postgres MCP Pro, Docker) | Inspeccionar esquema/datos reales, confirmar migraciones, `EXPLAIN` y sugerencias de índices | **Solo lectura** (`--access-mode=restricted`). Apunta al Postgres de Docker (`localhost:5433`); otro destino con `BK_DATABASE_URI`. Nunca apuntarlo a producción |
+| `playwright` | Navegar el frontend en móvil/tablet/escritorio, leer consola y red | Navegador aislado (`--isolated`), solo contra `localhost` |
+
+### Permisos (`.claude/settings.json`)
+
+Comandos de solo lectura permitidos sin preguntar; `db:reset`, `docker compose down`,
+`git push`, `reset --hard` y crear/mergear PRs piden confirmación; leer `.env.*` y
+editar las migraciones 0001–0004 ya aplicadas está bloqueado. Al agregar una migración
+nueva y aplicarla en develop, añadirla también a la lista `deny` de `Edit(...)`.
