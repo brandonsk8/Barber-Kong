@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run db:status)",
+      "Bash(npm run db:migrate)",
+      "Bash(npm run db:new:*)",
+      "Bash(node --check:*)",
+      "Bash(docker compose ps:*)",
+      "Bash(docker compose logs:*)",
+      "Bash(docker compose config:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git branch:*)",
+      "Bash(curl -s http://localhost:*)"
+    ],
+    "ask": [
+      "Bash(npm run db:reset:*)",
+      "Bash(docker compose down:*)",
+      "Bash(git push:*)",
+      "Bash(git reset --hard:*)",
+      "Bash(git branch -D:*)",
+      "Bash(gh pr create:*)",
+      "Bash(gh pr merge:*)"
+    ],
+    "deny": [
+      "Read(./.env.dev)",
+      "Read(./.env.test)",
+      "Read(./.env.prod)",
+      "Read(./.env)",
+      "Edit(./resources/db/migrations/0001_core_usuarios_roles.sql)",
+      "Edit(./resources/db/migrations/0002_catalogo_servicios_insumos.sql)",
+      "Edit(./resources/db/migrations/0003_citas_e_inventario.sql)",
+      "Edit(./resources/db/migrations/0004_notificaciones_y_auth.sql)"
+    ]
+  }
+}
