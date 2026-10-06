@@ -8,7 +8,9 @@
     "dev": "cross-env NODE_ENV=development nodemon --exec \"node --env-file=.env.dev\" ./index.js",
     "db:setup": "node --env-file=.env.dev scripts/db/setup.mjs",
     "db:reset": "node --env-file=.env.dev scripts/db/setup.mjs --reset",
-    "db:migrate": "node --env-file=.env.dev scripts/db/migrate.mjs"
+    "db:migrate": "node --env-file=.env.dev scripts/db/migrate.mjs",
+    "db:status": "node --env-file=.env.dev scripts/db/migrate.mjs status",
+    "db:new": "node scripts/db/new-migration.mjs"
   },
   "keywords": [],
   "author": "",
