@@ -1,0 +1,105 @@
+# Barber Kong — entorno completo con Docker: Postgres + migraciones versionadas + API + frontend.
+#
+#   docker compose up --build        levanta todo (http://localhost:5173 y http://localhost:3000/api/health)
+#   docker compose run --rm migrate  aplica solo las migraciones pendientes nuevas
+#   docker compose down -v           apaga y BORRA la base de datos (volumen)
+#
+# Versionado automático de la BD: en cada `up`, el servicio `migrate` corre
+# scripts/db/setup.mjs, que aplica en orden solo los archivos de
+# resources/db/migrations/ que todavía no estén en la tabla `schema_migrations` y luego
+# siembra seed.sql (idempotente). La API no arranca hasta que `migrate` termine bien, así
+# que nunca corre contra un esquema desactualizado. Para cambiar el esquema basta con
+# agregar un archivo nuevo `NNNN_descripcion.sql` y volver a hacer `docker compose up`.
+#
+# El frontend se construye desde el repo hermano ../Barber-Kong-Frontend (clonarlo al
+# lado de este). Si no lo tienes: `docker compose up --build db migrate api`.
+
+name: barber-kong
+
+x-db-env: &db-env
+  DB_HOST: db
+  DB_PORT: 5432
+  DB_NAME: ${DB_NAME:-barber_kong}
+  DB_USER: ${DB_USER:-postgres}
+  DB_PASSWORD: ${DB_PASSWORD:-postgres}
+  NODE_ENV: ${NODE_ENV:-development}
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-barber_kong}
+      TZ: America/Guatemala
+    ports:
+      - "${DB_HOST_PORT:-5433}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Corre una vez y termina: aplica migraciones pendientes (registradas en
+  # schema_migrations) y siembra los datos demo. Con NODE_ENV=production omite el seed.
+  migrate:
+    build: .
+    image: barber-kong-api
+    command: ["node", "scripts/db/setup.mjs"]
+    environment:
+      <<: *db-env
+    # Montado desde el repo: una migración nueva se aplica en el próximo `up` sin rebuild.
+    volumes:
+      - ./resources/db:/app/resources/db:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    build: .
+    image: barber-kong-api
+    restart: unless-stopped
+    environment:
+      <<: *db-env
+      PORT: 3000
+      JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-every-environment}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-2h}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      SMTP_HOST: ${SMTP_HOST:-smtp.ethereal.email}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-Barber Kong <no-reply@barberkong.com>}
+      LOG_LEVEL: ${LOG_LEVEL:-debug}
+    ports:
+      - "${API_PORT:-3000}:3000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # SPA de React compilada con Vite y servida con nginx (Dockerfile en el repo del
+  # frontend). VITE_API_URL se fija en build y la usa el navegador, por eso apunta a
+  # localhost y no al nombre del servicio `api`.
+  frontend:
+    build:
+      context: ../Barber-Kong-Frontend/frontend
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:3000/api}
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-5173}:80"
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  pgdata:

@@ -17,6 +17,8 @@ módulos vía `mountModules()`.
 - `npm run dev` — desarrollo con recarga automática, contra `.env.dev`
 - `npm run db:setup` — crea la BD local si no existe, aplica migraciones pendientes de `resources/db/migrations/` y siembra `seed.sql`
 - `npm run db:migrate` — solo aplica migraciones pendientes (sin seed, sin crear la BD)
+- `npm run db:status` — lista migraciones aplicadas / pendientes / editadas
+- `npm run db:new -- <descripcion>` — crea el siguiente `NNNN_descripcion.sql` vacío
 - `npm run db:reset` — `DROP SCHEMA public CASCADE` y recrea todo desde cero
 - `node --check <archivo>` — validación de sintaxis (ESM, funciona directo)
 
@@ -92,12 +94,18 @@ plantilla antes de escribir un módulo nuevo desde cero.
   tabla `schema_migrations` (una fila por archivo aplicado, con `version` = nombre del
   archivo). Es lo que hace que sean "versionadas": el estado real de cada entorno
   (dev/test/prod) queda en esa tabla, no en la memoria de quien las corrió.
+  El runner además: toma un `pg_advisory_lock` (dos runners simultáneos no chocan),
+  guarda el checksum SHA-256 de cada archivo y **se niega a correr si una migración ya
+  aplicada fue editada**, y rechaza nombres fuera del patrón `NNNN_descripcion.sql` o
+  números repetidos (p. ej. dos ramas que crearon cada una su `0005_`: renumerar la más
+  nueva antes de mergear).
 - Datos de ejemplo: [resources/db/seed.sql](./resources/db/seed.sql), con
   `ON CONFLICT DO NOTHING` para poder reaplicarse sin duplicar. No es una migración (no
   se versiona en `schema_migrations`): es data de demo, se omite en producción
   (`--no-seed` o `NODE_ENV=production`).
 - `scripts/db/setup.mjs` crea la BD si hace falta, corre `runMigrations()` y siembra.
-  Sin Docker: se asume un servidor Postgres ya instalado y corriendo.
+  Sirve contra un Postgres local o con `docker compose up` (el servicio `migrate` lo
+  corre automáticamente antes de levantar la API).
 - Transacciones: cuando una operación necesita más de un `INSERT`/`UPDATE` que deben
   confirmarse juntos o ninguno (el caso más claro: marcar una cita como atendida +
   descontar el insumo del inventario), usar `getClient()` de `src/config/db.js` con
