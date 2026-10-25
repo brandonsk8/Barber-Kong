@@ -17,7 +17,9 @@ export async function generar(req, res, next) {
     const { tipo, formato, desde, hasta } = validate(reporteQuerySchema, req.query);
 
     const data = await service.generar({ tipo, desde, hasta });
-    const archivo = formato === 'pdf' ? await service.exportarPDF(tipo, data) : await service.exportarExcel(tipo, data);
+    const rango = { desde, hasta };
+    const archivo =
+      formato === 'pdf' ? await service.exportarPDF(tipo, data, rango) : await service.exportarExcel(tipo, data, rango);
 
     res.setHeader('Content-Type', CONTENT_TYPES[formato]);
     res.setHeader(
