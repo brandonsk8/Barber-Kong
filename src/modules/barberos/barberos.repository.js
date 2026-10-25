@@ -139,3 +139,42 @@ export async function findCitasDelDia(barberoId, fecha) {
   );
   return rows;
 }
+
+// Días en que el barbero avisó que no atiende (día completo). Solo de hoy en adelante:
+// los pasados ya no afectan a nadie.
+export async function findAusencias(barberoId, desde) {
+  const { rows } = await query(
+    `SELECT id, fecha, motivo FROM ausencias_barbero
+     WHERE barbero_id = $1 AND fecha >= $2
+     ORDER BY fecha`,
+    [barberoId, desde]
+  );
+  return rows;
+}
+
+export async function findAusencia(barberoId, fecha) {
+  const { rows } = await query(
+    'SELECT id, fecha, motivo FROM ausencias_barbero WHERE barbero_id = $1 AND fecha = $2',
+    [barberoId, fecha]
+  );
+  return rows[0] || null;
+}
+
+export async function createAusencia({ barberoId, fecha, motivo }) {
+  const { rows } = await query(
+    `INSERT INTO ausencias_barbero (id, barbero_id, fecha, motivo)
+     VALUES ($1, $2, $3, $4)
+     RETURNING id, fecha, motivo`,
+    [randomUUID(), barberoId, fecha, motivo || null]
+  );
+  return rows[0];
+}
+
+// Devuelve true si existía (y era de ese barbero) y se borró.
+export async function deleteAusencia(id, barberoId) {
+  const { rowCount } = await query('DELETE FROM ausencias_barbero WHERE id = $1 AND barbero_id = $2', [
+    id,
+    barberoId,
+  ]);
+  return rowCount > 0;
+}

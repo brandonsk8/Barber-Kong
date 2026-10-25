@@ -61,6 +61,18 @@ function validarHorario(horario) {
   });
 }
 
+// "Hoy" en la zona horaria de la barbería (AAAA-MM-DD), no la del servidor.
+function hoyGuatemala() {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guatemala' }).format(new Date());
+}
+
+// Solo el administrador o el propio barbero pueden tocar la agenda de ese barbero.
+function assertPuedeGestionar(barbero, requester) {
+  if (requester.role === 'admin') return;
+  if (requester.role === 'barbero' && barbero.user_id === requester.id) return;
+  throw ApiError.forbidden('Solo puedes gestionar tu propia agenda.');
+}
+
 export function createBarberosService({ repository }) {
   return {
     async listActive() {
@@ -117,6 +129,9 @@ export function createBarberosService({ repository }) {
     // citas.service.js al agendar/reprogramar, para que ninguna cita caiga fuera del
     // horario que el administrador le configuró.
     async assertAtiende({ barberoId, fecha, horaInicio, horaFin }) {
+      if (await repository.findAusencia(barberoId, fecha)) {
+        throw ApiError.conflict('El barbero no estará disponible ese día. Elige otra fecha.');
+      }
       const dia = diaSemanaDe(fecha);
       const bloques = await repository.findHorarioDelDia(barberoId, dia);
       if (bloques.length === 0) {
@@ -151,8 +166,47 @@ export function createBarberosService({ repository }) {
       });
       // `trabaja` y `bloques` le dicen al frontend qué horas ofrecer ese día según el
       // horario del barbero (si no trabaja ese día, no hay horas que mostrar).
-      const bloques = await repository.findHorarioDelDia(barberoId, diaSemanaDe(fecha));
-      return { ocupadas: Array.from(ocupadas).sort(), trabaja: bloques.length > 0, bloques };
+      const ausente = Boolean(await repository.findAusencia(barberoId, fecha));
+      const bloques = ausente ? [] : await repository.findHorarioDelDia(barberoId, diaSemanaDe(fecha));
+      return { ocupadas: Array.from(ocupadas).sort(), trabaja: bloques.length > 0, bloques, ausente };
+    },
+
+    // ----- Días en que el barbero no estará disponible -----
+
+    async listAusencias(barberoId, requester) {
+      const barbero = await this.getById(barberoId);
+      assertPuedeGestionar(barbero, requester);
+      return repository.findAusencias(barberoId, hoyGuatemala());
+    },
+
+    async crearAusencia(barberoId, { fecha, motivo }, requester) {
+      const barbero = await this.getById(barberoId);
+      assertPuedeGestionar(barbero, requester);
+
+      if (fecha < hoyGuatemala()) throw ApiError.badRequest('No puedes marcar un día que ya pasó.');
+
+      // No se cancelan citas de clientes por detrás: si ya hay citas ese día, primero se
+      // cancelan o reprograman (mismo criterio que al desactivar un barbero con citas).
+      const citas = await repository.findCitasDelDia(barberoId, fecha);
+      if (citas.length > 0) {
+        throw ApiError.conflict(
+          `Ese día ya hay ${citas.length} cita(s) agendada(s) con este barbero. Cancélalas o reprográmalas antes de marcarlo como no disponible.`
+        );
+      }
+
+      try {
+        return await repository.createAusencia({ barberoId, fecha, motivo });
+      } catch (err) {
+        if (err.code === '23505') throw ApiError.conflict('Ese día ya está marcado como no disponible.');
+        throw err;
+      }
+    },
+
+    async quitarAusencia(barberoId, ausenciaId, requester) {
+      const barbero = await this.getById(barberoId);
+      assertPuedeGestionar(barbero, requester);
+      const eliminada = await repository.deleteAusencia(ausenciaId, barberoId);
+      if (!eliminada) throw ApiError.notFound('Esa ausencia no existe.');
     },
   };
 }

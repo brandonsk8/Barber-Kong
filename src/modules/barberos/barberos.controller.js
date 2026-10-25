@@ -1,4 +1,9 @@
-import { createBarberoSchema, updateBarberoSchema, disponibilidadQuerySchema } from './barberos.schema.js';
+import {
+  createBarberoSchema,
+  updateBarberoSchema,
+  disponibilidadQuerySchema,
+  crearAusenciaSchema,
+} from './barberos.schema.js';
 import { validate } from '../../helpers/validate.js';
 import { barberosService as service } from './barberos.instance.js';
 
@@ -67,6 +72,32 @@ export async function update(req, res, next) {
 export async function deactivate(req, res, next) {
   try {
     res.json(await service.deactivate(req.params.id));
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function listAusencias(req, res, next) {
+  try {
+    res.json(await service.listAusencias(req.params.id, req.user));
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function crearAusencia(req, res, next) {
+  try {
+    const data = validate(crearAusenciaSchema, req.body);
+    res.status(201).json(await service.crearAusencia(req.params.id, data, req.user));
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function quitarAusencia(req, res, next) {
+  try {
+    await service.quitarAusencia(req.params.id, req.params.ausenciaId, req.user);
+    res.status(204).end();
   } catch (err) {
     next(err);
   }

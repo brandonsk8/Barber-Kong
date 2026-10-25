@@ -74,3 +74,16 @@ export const disponibilidadQuerySchema = {
   required: ['fecha'],
   additionalProperties: true,
 };
+
+export const crearAusenciaSchema = {
+  type: 'object',
+  properties: {
+    fecha: { type: 'string', format: 'date', errorMessage: 'La fecha debe tener el formato AAAA-MM-DD.' },
+    motivo: { type: 'string', maxLength: 255, errorMessage: 'El motivo no puede pasar de 255 caracteres.' },
+  },
+  required: ['fecha'],
+  additionalProperties: false,
+  errorMessage: {
+    required: { fecha: 'Debes indicar el día en que no estarás disponible.' },
+  },
+};
