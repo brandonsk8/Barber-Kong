@@ -19,7 +19,13 @@ export async function findServicioById(id) {
 }
 
 export async function findBarberoById(id) {
-  const { rows } = await query('SELECT * FROM barberos WHERE id = $1', [id]);
+  // Incluye el correo de su cuenta: citas.service.js lo necesita para avisarle al barbero.
+  const { rows } = await query(
+    `SELECT b.*, u.email
+     FROM barberos b JOIN users u ON u.id = b.user_id
+     WHERE b.id = $1`,
+    [id]
+  );
   return rows[0] || null;
 }
 
