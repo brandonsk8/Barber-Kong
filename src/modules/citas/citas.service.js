@@ -2,6 +2,7 @@ import { ApiError } from '../../helpers/ApiError.js';
 import { getClient } from '../../config/db.js';
 import { notify } from '../../services/notification.service.js';
 import { inventarioService } from '../inventario/inventario.instance.js';
+import { barberosService } from '../barberos/barberos.instance.js';
 
 function addMinutes(hhmm, minutes) {
   const [h, m] = hhmm.split(':').map(Number);
@@ -26,6 +27,9 @@ export function createCitasService({ repository }) {
     if (!barbero || !barbero.is_active) throw ApiError.notFound('Barbero no encontrado.');
 
     const horaFin = addMinutes(horaInicio, servicio.duracion_minutos);
+
+    // La cita debe caer dentro del horario del barbero (y no en un día que no atiende).
+    await barberosService.assertAtiende({ barberoId, fecha, horaInicio, horaFin });
 
     const solapa = await repository.existeSolapamiento(barberoId, fecha, horaInicio, horaFin, excludeCitaId);
     if (solapa) throw ApiError.conflict('Ese horario ya no está disponible. Elegí otro.');
