@@ -17,6 +17,6 @@ const transporter = nodemailer.createTransport({
   socketTimeout: 5000,
 });
 
-export async function sendMail({ to, subject, html }) {
-  return transporter.sendMail({ from: process.env.SMTP_FROM, to, subject, html });
+export async function sendMail({ to, subject, html, text }) {
+  return transporter.sendMail({ from: process.env.SMTP_FROM, to, subject, html, text });
 }

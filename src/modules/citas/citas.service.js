@@ -2,6 +2,7 @@ import { ApiError } from '../../helpers/ApiError.js';
 import { getClient } from '../../config/db.js';
 import { notify } from '../../services/notification.service.js';
 import { inventarioService } from '../inventario/inventario.instance.js';
+import { barberosService } from '../barberos/barberos.instance.js';
 
 function addMinutes(hhmm, minutes) {
   const [h, m] = hhmm.split(':').map(Number);
@@ -26,6 +27,9 @@ export function createCitasService({ repository }) {
     if (!barbero || !barbero.is_active) throw ApiError.notFound('Barbero no encontrado.');
 
     const horaFin = addMinutes(horaInicio, servicio.duracion_minutos);
+
+    // La cita debe caer dentro del horario del barbero (y no en un día que no atiende).
+    await barberosService.assertAtiende({ barberoId, fecha, horaInicio, horaFin });
 
     const solapa = await repository.existeSolapamiento(barberoId, fecha, horaInicio, horaFin, excludeCitaId);
     if (solapa) throw ApiError.conflict('Ese horario ya no está disponible. Elegí otro.');
@@ -70,8 +74,27 @@ export function createCitasService({ repository }) {
           tipo: 'confirmacion_cita',
           titulo: 'Cita confirmada — Barber Kong',
           mensaje: `Tu cita de "${servicio.nombre}" con ${barbero.nombre} quedó confirmada para el ${fecha} a las ${horaInicio}.`,
+          datos: { cita: { servicio: servicio.nombre, barbero: barbero.nombre, fecha, hora: horaInicio } },
         });
       }
+
+      // El barbero asignado también se entera (UC-04): le llega a su centro de
+      // notificaciones y por correo, aunque el cliente no tenga correo.
+      await notify({
+        userId: barbero.user_id,
+        email: barbero.email,
+        tipo: 'confirmacion_cita',
+        titulo: 'Nueva cita agendada — Barber Kong',
+        mensaje: `${cliente.nombre} agendó "${servicio.nombre}" contigo para el ${fecha} a las ${horaInicio}.`,
+        datos: {
+          textos: {
+            encabezado: 'Tienes una nueva cita',
+            intro: 'Un cliente acaba de agendar contigo:',
+            ayuda: 'Revisa tu agenda para ver todas tus citas del día.',
+          },
+          cita: { cliente: cliente.nombre, servicio: servicio.nombre, fecha, hora: horaInicio },
+        },
+      });
 
       return cita;
     },
@@ -128,6 +151,7 @@ export function createCitasService({ repository }) {
             tipo: 'reprogramacion_cita',
             titulo: 'Cita reprogramada — Barber Kong',
             mensaje: `Tu cita de "${cita.servicio_nombre}" quedó reprogramada para el ${fecha} a las ${horaInicio}.`,
+            datos: { cita: { servicio: cita.servicio_nombre, barbero: cita.barbero_nombre, fecha, hora: horaInicio } },
           });
         }
       }
@@ -153,6 +177,9 @@ export function createCitasService({ repository }) {
             tipo: 'cancelacion_cita',
             titulo: 'Cita cancelada — Barber Kong',
             mensaje: `Tu cita de "${cita.servicio_nombre}" del ${cita.fecha} a las ${cita.hora_inicio} fue cancelada.`,
+            datos: {
+              cita: { servicio: cita.servicio_nombre, barbero: cita.barbero_nombre, fecha: cita.fecha, hora: cita.hora_inicio },
+            },
           });
         }
       }
