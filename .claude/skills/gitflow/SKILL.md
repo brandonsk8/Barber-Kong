@@ -1,6 +1,6 @@
 ---
 name: gitflow
-description: Flujo GitFlow del equipo Barber Kong para empezar una tarea, commitear y preparar un Pull Request (ramas feature/fix/docs/hotfix desde develop, commits atómicos en español).
+description: Flujo GitFlow del equipo Barber Kongs para empezar una tarea, commitear y preparar un Pull Request (ramas feature/fix/docs/hotfix desde develop, commits atómicos en español).
 ---
 
 # GitFlow del equipo

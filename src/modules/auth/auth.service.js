@@ -65,7 +65,7 @@ export function createAuthService({ repository }) {
           userId: user.id,
           email: user.email,
           tipo: 'dos_factor',
-          titulo: 'Tu código de verificación — Barber Kong',
+          titulo: 'Tu código de verificación — Barber Kongs',
           mensaje: `Tu código de verificación es ${code}. Vence en ${TWO_FACTOR_TTL_MINUTES} minutos.`,
           datos: { codigo: code, vence: `${TWO_FACTOR_TTL_MINUTES} minutos` },
         });
@@ -104,7 +104,7 @@ export function createAuthService({ repository }) {
           userId: user.id,
           email: user.email,
           tipo: 'recuperacion_password',
-          titulo: 'Recuperar contraseña — Barber Kong',
+          titulo: 'Recuperar contraseña — Barber Kongs',
           mensaje: `Hacé clic en este enlace para restablecer tu contraseña (vence en ${RESET_TOKEN_TTL_HOURS} hora): ${resetUrl}`,
           datos: {
             accion: { texto: 'Restablecer contraseña', url: resetUrl },

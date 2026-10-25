@@ -1,6 +1,6 @@
 ---
 name: revisar-reglas
-description: Revisar el diff actual (o una rama/PR) contra las reglas duras y la arquitectura de Barber Kong antes de commitear o aprobar un Pull Request.
+description: Revisar el diff actual (o una rama/PR) contra las reglas duras y la arquitectura de Barber Kongs antes de commitear o aprobar un Pull Request.
 ---
 
 # Revisión contra las reglas del proyecto

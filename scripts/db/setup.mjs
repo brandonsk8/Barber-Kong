@@ -2,7 +2,8 @@
 // Crea la base de datos en el Postgres local (si no existe), aplica las migraciones
 // versionadas de resources/db/migrations/*.sql y siembra resources/db/seed.sql. Sin
 // Docker, sin ORM: asume que ya tienes un servidor Postgres corriendo localmente y
-// credenciales con permiso de CREATEDB (el usuario de tu instalación local sirve).
+// credenciales con permiso de CREATEDB (el usuario de tu instalación local sirve), o
+// uno administrado (Supabase) con DB_SSL=true.
 //
 // Uso:
 //   npm run db:setup           -> crea/actualiza el esquema (migraciones) y siembra datos de ejemplo
@@ -10,7 +11,7 @@
 //   npm run db:migrate         -> solo aplica migraciones pendientes, sin seed
 //
 // Variables de entorno esperadas (ver .env.example): DB_HOST, DB_PORT, DB_NAME, DB_USER,
-// DB_PASSWORD, NODE_ENV.
+// DB_PASSWORD, DB_SSL, NODE_ENV.
 
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -32,11 +33,17 @@ if (!dbName || !/^[a-zA-Z0-9_]+$/.test(dbName)) {
   process.exit(1);
 }
 
+// DB_SSL=true para Postgres administrado (Supabase y similares). rejectUnauthorized:false
+// porque el certificado del pooler no siempre valida contra la CA por defecto de Node —
+// la conexión igual viaja cifrada.
+const ssl = process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : undefined;
+
 const baseConfig = {
   host: process.env.DB_HOST,
   port: Number(process.env.DB_PORT) || 5432,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
+  ssl,
 };
 
 async function ensureDatabaseExists() {
@@ -70,6 +77,9 @@ async function runSqlFile(client, filename) {
 }
 
 async function main() {
+  // Supabase (y la mayoría de Postgres administrados) no da permiso CREATEDB sobre
+  // una base ya aprovisionada por ellos (la base "postgres" ya existe de entrada) —
+  // ensureDatabaseExists() simplemente confirma que existe y sigue, sin intentar crear.
   await ensureDatabaseExists();
 
   const client = new Client({ ...baseConfig, database: dbName });

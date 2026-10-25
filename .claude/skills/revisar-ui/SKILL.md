@@ -1,6 +1,6 @@
 ---
 name: revisar-ui
-description: Revisar una pantalla del frontend de Barber Kong en móvil, tablet y escritorio (responsive, mensajes de éxito/error/carga, coherencia visual, accesibilidad básica) usando el MCP de Playwright.
+description: Revisar una pantalla del frontend de Barber Kongs en móvil, tablet y escritorio (responsive, mensajes de éxito/error/carga, coherencia visual, accesibilidad básica) usando el MCP de Playwright.
 ---
 
 # Revisión de UI con Playwright MCP

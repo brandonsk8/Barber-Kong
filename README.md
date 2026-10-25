@@ -1,4 +1,4 @@
-# Barber Kong — Backend
+# Barber Kongs — Backend
 
 API del Sistema de Gestión para Barbería, proyecto de Seminario de Sistemas 1 (CUNOC,
 segundo semestre 2026). Stack: Node.js (ESM) + Express, PostgreSQL con **SQL plano
