@@ -1,6 +1,6 @@
 ---
 name: verificar-entorno
-description: Levantar Barber Kong con Docker Compose y verificar de punta a punta que funciona (migraciones aplicadas, API sana, login, endpoints afectados por un cambio). Usar antes de dar por terminado un cambio o antes de una demo.
+description: Levantar Barber Kongs con Docker Compose y verificar de punta a punta que funciona (migraciones aplicadas, API sana, login, endpoints afectados por un cambio). Usar antes de dar por terminado un cambio o antes de una demo.
 ---
 
 # Verificar el entorno completo

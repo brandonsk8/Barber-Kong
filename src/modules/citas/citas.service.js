@@ -72,7 +72,7 @@ export function createCitasService({ repository }) {
           userId,
           email: cliente.correo,
           tipo: 'confirmacion_cita',
-          titulo: 'Cita confirmada — Barber Kong',
+          titulo: 'Cita confirmada — Barber Kongs',
           mensaje: `Tu cita de "${servicio.nombre}" con ${barbero.nombre} quedó confirmada para el ${fecha} a las ${horaInicio}.`,
           datos: { cita: { servicio: servicio.nombre, barbero: barbero.nombre, fecha, hora: horaInicio } },
         });
@@ -84,7 +84,7 @@ export function createCitasService({ repository }) {
         userId: barbero.user_id,
         email: barbero.email,
         tipo: 'confirmacion_cita',
-        titulo: 'Nueva cita agendada — Barber Kong',
+        titulo: 'Nueva cita agendada — Barber Kongs',
         mensaje: `${cliente.nombre} agendó "${servicio.nombre}" contigo para el ${fecha} a las ${horaInicio}.`,
         datos: {
           textos: {
@@ -149,7 +149,7 @@ export function createCitasService({ repository }) {
             userId: requester.id,
             email: cliente.correo,
             tipo: 'reprogramacion_cita',
-            titulo: 'Cita reprogramada — Barber Kong',
+            titulo: 'Cita reprogramada — Barber Kongs',
             mensaje: `Tu cita de "${cita.servicio_nombre}" quedó reprogramada para el ${fecha} a las ${horaInicio}.`,
             datos: { cita: { servicio: cita.servicio_nombre, barbero: cita.barbero_nombre, fecha, hora: horaInicio } },
           });
@@ -175,7 +175,7 @@ export function createCitasService({ repository }) {
             userId: requester.id,
             email: cliente.correo,
             tipo: 'cancelacion_cita',
-            titulo: 'Cita cancelada — Barber Kong',
+            titulo: 'Cita cancelada — Barber Kongs',
             mensaje: `Tu cita de "${cita.servicio_nombre}" del ${cita.fecha} a las ${cita.hora_inicio} fue cancelada.`,
             datos: {
               cita: { servicio: cita.servicio_nombre, barbero: cita.barbero_nombre, fecha: cita.fecha, hora: cita.hora_inicio },

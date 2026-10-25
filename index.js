@@ -11,7 +11,7 @@ async function start() {
   const app = await createApp();
 
   app.listen(PORT, () => {
-    logger.info(`Barber Kong API escuchando en el puerto ${PORT}`);
+    logger.info(`Barber Kongs API escuchando en el puerto ${PORT}`);
   });
 }
 

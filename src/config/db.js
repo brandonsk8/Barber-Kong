@@ -11,12 +11,26 @@ const { Pool, types } = pg;
 // el valor tal cual lo manda Postgres, sin conversión a Date.
 types.setTypeParser(types.builtins.DATE, (value) => value);
 
+// DB_SSL=true habilita TLS — necesario para Supabase (y la mayoría de Postgres
+// administrados en la nube). Se deja apagado por defecto para no romper el Postgres
+// local ni el de docker-compose, que no usan TLS. rejectUnauthorized:false porque el
+// certificado del connection pooler de Supabase no siempre valida contra la CA por
+// defecto de Node — la conexión igual viaja cifrada, solo no se verifica la cadena
+// completa (aceptable acá: no es tráfico público, es backend -> BD administrada).
+const ssl = process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : undefined;
+
 export const pool = new Pool({
   host: process.env.DB_HOST,
   port: Number(process.env.DB_PORT) || 5432,
   database: process.env.DB_NAME,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
+  // En Vercel cada invocación de función serverless puede abrir su propio pool; uno
+  // chico (DB_POOL_MAX=1 recomendado ahí) evita agotar las conexiones del transaction
+  // pooler de Supabase bajo carga concurrente. Sin definir, usa el default de `pg` (10),
+  // que es lo correcto para un proceso long-lived como en local/Docker.
+  max: process.env.DB_POOL_MAX ? Number(process.env.DB_POOL_MAX) : undefined,
+  ssl,
 });
 
 pool.on('error', (err) => {

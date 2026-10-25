@@ -4,7 +4,7 @@ Contexto y reglas de trabajo para asistentes de IA en este repositorio.
 
 ## Qué es este proyecto
 
-API Node.js (ESM, `"type": "module"`) del Sistema de Gestión para Barber Kong, una
+API Node.js (ESM, `"type": "module"`) del Sistema de Gestión para Barber Kongs, una
 barbería en Xela (Quetzaltenango, Guatemala). Proyecto de Seminario de Sistemas 1
 (CUNOC). PostgreSQL es la única base de datos, **sin ORM**: el acceso a datos es SQL
 parametrizado a mano.

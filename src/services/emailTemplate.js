@@ -1,5 +1,5 @@
 // Plantilla de correo compartida: toda notificación por correo sale con la misma marca
-// de Barber Kong y un cuerpo pensado para entenderse de un vistazo (título claro, el dato
+// de Barber Kongs y un cuerpo pensado para entenderse de un vistazo (título claro, el dato
 // importante resaltado -código, botón o detalle de la cita- y una línea de qué hacer).
 // HTML "email-safe": tablas y estilos en línea, sin CSS externo ni imágenes, para que se
 // vea igual en Gmail, Outlook y el celular. Todo valor dinámico pasa por `esc()`.
@@ -30,7 +30,7 @@ const TIPOS = {
   },
   confirmacion_cita: {
     encabezado: '¡Tu cita está confirmada!',
-    intro: 'Te esperamos en Barber Kong. Estos son los datos de tu cita:',
+    intro: 'Te esperamos en Barber Kongs. Estos son los datos de tu cita:',
     ayuda: '¿Necesitas cambiarla? Entra a tu cuenta y reprograma o cancela desde "Mis citas".',
   },
   reprogramacion_cita: {
@@ -212,7 +212,7 @@ export function renderEmail({ tipo, titulo, mensaje, datos = {} }) {
           </table>
         </td></tr>
         <tr><td align="center" style="padding:16px 8px;font-size:12px;color:${COLORES.atenuado};line-height:1.5;">
-          Barber Kong · Xela, Quetzaltenango<br>
+          Barber Kongs · Xela, Quetzaltenango<br>
           Este es un mensaje automático, por favor no respondas a este correo.
         </td></tr>
       </table>
@@ -229,7 +229,7 @@ export function renderEmail({ tipo, titulo, mensaje, datos = {} }) {
   if (datos.nota) lineas.push(datos.nota);
   if (detalles.length) lineas.push('', ...detalles.map(([e, v]) => `${e}: ${v}`));
   if (cfg.ayuda) lineas.push('', cfg.ayuda);
-  lineas.push('', '— Barber Kong');
+  lineas.push('', '— Barber Kongs');
 
   return { html, text: lineas.join('\n') };
 }

@@ -1,6 +1,6 @@
--- Barber Kong — datos de ejemplo (desarrollo/pruebas)
+-- Barber Kongs — datos de ejemplo (desarrollo/pruebas)
 --
--- Contraseña para todas las cuentas de ejemplo: BarberKong2026!
+-- Contraseña para todas las cuentas de ejemplo:     
 -- (hash bcrypt precalculado, costo 10 — ver resources/db/README.md para regenerarlo)
 --
 -- Usa ids fijos e `ON CONFLICT DO NOTHING` para poder correrse varias veces sin duplicar.

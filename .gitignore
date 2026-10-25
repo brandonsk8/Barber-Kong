@@ -13,3 +13,5 @@ logs/
 
 # Ajustes personales de Claude Code (los del equipo van en .claude/settings.json)
 .claude/settings.local.json
+.vercel
+login.json

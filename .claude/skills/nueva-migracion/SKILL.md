@@ -1,6 +1,6 @@
 ---
 name: nueva-migracion
-description: Crear un cambio de esquema de la base de datos de Barber Kong como migración versionada (tabla nueva, columna, índice, restricción). Usar siempre que haya que tocar el modelo de datos.
+description: Crear un cambio de esquema de la base de datos de Barber Kongs como migración versionada (tabla nueva, columna, índice, restricción). Usar siempre que haya que tocar el modelo de datos.
 ---
 
 # Nueva migración versionada
