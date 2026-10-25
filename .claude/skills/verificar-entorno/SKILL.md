@@ -5,7 +5,7 @@ description: Levantar Barber Kongs con Docker Compose y verificar de punta a pun
 
 # Verificar el entorno completo
 
-No hay suite de pruebas automatizada: la verificación es levantar el sistema y probarlo.
+Corre primero `npm test` (suite automática, ver CLAUDE.md); esta skill cubre lo que esa suite no ve: levantar el sistema completo y probarlo a mano.
 
 ## 1. Levantar
 

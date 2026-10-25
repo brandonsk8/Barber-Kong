@@ -20,11 +20,31 @@ módulos vía `mountModules()`.
 - `npm run db:status` — lista migraciones aplicadas / pendientes / editadas
 - `npm run db:new -- <descripcion>` — crea el siguiente `NNNN_descripcion.sql` vacío
 - `npm run db:reset` — `DROP SCHEMA public CASCADE` y recrea todo desde cero
+- `npm run db:setup:test` — crea/actualiza la BD de pruebas (`barber_kong_test`, según `.env.test`) con migraciones y seed
+- `npm test` — toda la suite (Vitest): unitarias + integración. `npm run test:unit` (sin BD), `npm run test:integration` (con BD de pruebas), `npm run test:cov` (cobertura), `npm run test:watch`
 - `node --check <archivo>` — validación de sintaxis (ESM, funciona directo)
 
-No hay una suite de pruebas automatizada en este repo. Verificar los cambios arrancando
-el servidor (`npm run dev`) y probando los endpoints afectados a mano antes de dar por
-terminado un fix o una funcionalidad.
+## Pruebas automatizadas
+
+Vitest + Supertest, en `tests/`:
+
+- `tests/unit/` — lógica de negocio con repositorios falsos (la inyección por factory
+  `createXService({ repository })` es justo para esto) y utilidades puras. No tocan la BD.
+- `tests/integration/` — la app Express real (`createApp()`) contra Postgres real: auth,
+  roles, agendar/cancelar/reprogramar, `marcarAtendida` con su transacción y descuento de
+  inventario, reportes descargables.
+- `tests/helpers/fixtures.js` — crea usuarios/servicios/insumos con el prefijo `zz-test` y
+  los borra al terminar (`cerrar()`); cada prueba usa datos únicos y no depende del orden.
+- El correo está mockeado para todos los tests (`tests/setup.js`): ninguna prueba envía
+  correos reales; se revisa `sendMail.mock.calls`.
+
+**Seguridad:** las pruebas escriben y borran datos de verdad. `tests/setup.js` se niega a
+correr si `NODE_ENV` no es `test` o si `DB_NAME` no termina en `_test`. No debilitar esa
+guarda ni apuntar `.env.test` a la base de desarrollo o producción.
+
+Antes de dar por terminado un cambio: `npm test`. Si el cambio toca una regla de negocio,
+agregar o ajustar su prueba (un bug corregido debería dejar una prueba que lo habría
+detectado). Para validar a mano en navegador sigue existiendo la skill `verificar-entorno`.
 
 ## REGLAS DURAS (no negociables)
 
@@ -141,7 +161,7 @@ proyecto, no "por tenerla".
 | `nuevo-modulo` | Módulo/endpoint nuevo | Replica el patrón de capas de `servicios/` (SOLID, rol en backend, Ajv, SQL parametrizado) |
 | `revisar-reglas` | Revisar diff/PR | Checklist de las reglas duras antes de commitear o aprobar un PR |
 | `gitflow` | Ramas, commits, PR | GitFlow del equipo: commits atómicos, nada de push/PR sin autorización |
-| `verificar-entorno` | Probar un cambio | No hay tests automatizados: levanta Docker y prueba API/roles de punta a punta |
+| `verificar-entorno` | Probar un cambio a mano | Complementa a `npm test`: levanta Docker y prueba API/roles/UI de punta a punta |
 | `revisar-ui` | Revisar pantallas | Responsive, mensajes de feedback y accesibilidad con Playwright |
 
 ### Servidores MCP (`.mcp.json`)
