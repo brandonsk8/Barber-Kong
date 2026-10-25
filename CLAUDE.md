@@ -21,7 +21,7 @@ módulos vía `mountModules()`.
 - `npm run db:new -- <descripcion>` — crea el siguiente `NNNN_descripcion.sql` vacío
 - `npm run db:reset` — `DROP SCHEMA public CASCADE` y recrea todo desde cero
 - `npm run db:setup:test` — crea/actualiza la BD de pruebas (`barber_kong_test`, según `.env.test`) con migraciones y seed
-- `npm test` — toda la suite (Vitest): unitarias + integración. `npm run test:unit` (sin BD), `npm run test:integration` (con BD de pruebas), `npm run test:cov` (cobertura), `npm run test:watch`
+- `npm test` — toda la suite (Vitest): unitarias + integración. `npm run test:unit` (sin BD), `npm run test:integration` (con BD de pruebas), `npm run test:cov` (cobertura), `npm run test:watch`, `npm run test:carga` (carga y concurrencia, manual: `tests/load/carga.mjs`)
 - `node --check <archivo>` — validación de sintaxis (ESM, funciona directo)
 
 ## Pruebas automatizadas

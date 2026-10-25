@@ -38,6 +38,7 @@ barberos demo, todos con la contraseña `BarberKong2026!`.
 | `npm test` | Suite completa (unitarias + integración) con Vitest |
 | `npm run test:unit` / `test:integration` | Solo una de las dos capas (las unitarias no necesitan BD) |
 | `npm run test:cov` | Suite con reporte de cobertura (`coverage/`) |
+| `npm run test:carga` | Carga (20 usuarios concurrentes) y reservas simultáneas contra la base de pruebas; manual, no entra en `npm test` |
 
 ## Pruebas
 
