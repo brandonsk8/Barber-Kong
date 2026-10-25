@@ -68,6 +68,14 @@ export function createInventarioService({ repository }) {
             tipo: 'alerta_inventario',
             titulo: `Stock bajo: ${insumo.nombre}`,
             mensaje: `Quedan ${insumo.cantidad_disponible} ${insumo.unidad_medida || ''} de "${insumo.nombre}" (mínimo configurado: ${insumo.cantidad_minima}).`,
+            datos: {
+              insumo: {
+                nombre: insumo.nombre,
+                disponible: insumo.cantidad_disponible,
+                unidad: insumo.unidad_medida,
+                minimo: insumo.cantidad_minima,
+              },
+            },
           });
         }
       }

@@ -70,6 +70,7 @@ export function createCitasService({ repository }) {
           tipo: 'confirmacion_cita',
           titulo: 'Cita confirmada — Barber Kong',
           mensaje: `Tu cita de "${servicio.nombre}" con ${barbero.nombre} quedó confirmada para el ${fecha} a las ${horaInicio}.`,
+          datos: { cita: { servicio: servicio.nombre, barbero: barbero.nombre, fecha, hora: horaInicio } },
         });
       }
 
@@ -128,6 +129,7 @@ export function createCitasService({ repository }) {
             tipo: 'reprogramacion_cita',
             titulo: 'Cita reprogramada — Barber Kong',
             mensaje: `Tu cita de "${cita.servicio_nombre}" quedó reprogramada para el ${fecha} a las ${horaInicio}.`,
+            datos: { cita: { servicio: cita.servicio_nombre, barbero: cita.barbero_nombre, fecha, hora: horaInicio } },
           });
         }
       }
@@ -153,6 +155,9 @@ export function createCitasService({ repository }) {
             tipo: 'cancelacion_cita',
             titulo: 'Cita cancelada — Barber Kong',
             mensaje: `Tu cita de "${cita.servicio_nombre}" del ${cita.fecha} a las ${cita.hora_inicio} fue cancelada.`,
+            datos: {
+              cita: { servicio: cita.servicio_nombre, barbero: cita.barbero_nombre, fecha: cita.fecha, hora: cita.hora_inicio },
+            },
           });
         }
       }
