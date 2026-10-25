@@ -16,7 +16,8 @@
     "db:setup:test": "cross-env NODE_ENV=test node --env-file=.env.test scripts/db/setup.mjs",
     "db:migrate": "node --env-file=.env.dev scripts/db/migrate.mjs",
     "db:status": "node --env-file=.env.dev scripts/db/migrate.mjs status",
-    "db:new": "node scripts/db/new-migration.mjs"
+    "db:new": "node scripts/db/new-migration.mjs",
+    "test:carga": "cross-env NODE_ENV=test node --env-file=.env.test tests/load/carga.mjs"
   },
   "keywords": [],
   "author": "",
