@@ -17,6 +17,50 @@ function slotsCubiertos(horaInicio, horaFin) {
   return slots.length ? slots : [horaInicio.slice(0, 5)];
 }
 
+const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+
+// Horario por defecto de la barbería al crear un barbero: domingo a jueves, 9:00-19:00.
+const HORARIO_POR_DEFECTO = [0, 1, 2, 3, 4].map((dia) => ({
+  dia_semana: dia,
+  hora_inicio: '09:00',
+  hora_fin: '19:00',
+}));
+
+// 0 = domingo ... 6 = sábado, igual que disponibilidad_barberos.dia_semana. Se calcula
+// en UTC a propósito: la fecha ya es solo-día y no debe correrse por zona horaria.
+function diaSemanaDe(fecha) {
+  const [y, m, d] = fecha.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+}
+
+// Reglas que el JSON Schema no puede expresar: cada bloque termina después de empezar y
+// los bloques de un mismo día no se traslapan. Los mensajes dicen qué bloque está mal
+// (UC-22/UC-23: "impide guardar y señala los campos con error").
+function validarHorario(horario) {
+  horario.forEach((b, i) => {
+    if (b.hora_fin <= b.hora_inicio) {
+      throw ApiError.badRequest(
+        `Horario, bloque ${i + 1} (${DIAS[b.dia_semana]}): la hora de fin debe ser posterior a la de inicio.`
+      );
+    }
+  });
+
+  const porDia = new Map();
+  horario.forEach((b, i) => {
+    porDia.set(b.dia_semana, [...(porDia.get(b.dia_semana) || []), { ...b, n: i + 1 }]);
+  });
+  porDia.forEach((bloques, dia) => {
+    const ordenados = [...bloques].sort((a, b) => a.hora_inicio.localeCompare(b.hora_inicio));
+    for (let i = 1; i < ordenados.length; i += 1) {
+      if (ordenados[i].hora_inicio < ordenados[i - 1].hora_fin) {
+        throw ApiError.badRequest(
+          `Horario (${DIAS[dia]}): los bloques ${ordenados[i - 1].n} y ${ordenados[i].n} se traslapan.`
+        );
+      }
+    }
+  });
+}
+
 export function createBarberosService({ repository }) {
   return {
     async listActive() {
@@ -40,20 +84,50 @@ export function createBarberosService({ repository }) {
       return repository.findByUserId(userId);
     },
 
-    async create({ nombre, especialidad, email, password }) {
+    // Barbero con su horario semanal, para el formulario de edición del administrador.
+    async getDetalle(id) {
+      const barbero = await this.getById(id);
+      return { ...barbero, horario: await repository.findHorario(id) };
+    },
+
+    async getHorario(id) {
+      await this.getById(id);
+      return repository.findHorario(id);
+    },
+
+    async create({ nombre, especialidad, email, password, horario = HORARIO_POR_DEFECTO }) {
+      validarHorario(horario);
       const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
       try {
-        return await repository.createWithUser({ nombre, especialidad, email, passwordHash });
+        return await repository.createWithUser({ nombre, especialidad, email, passwordHash, horario });
       } catch (err) {
         if (err.code === '23505') throw ApiError.conflict('Ya existe una cuenta con ese correo.');
         throw err;
       }
     },
 
-    async update(id, data) {
-      const barbero = await repository.update(id, data);
+    async update(id, { horario, ...datos }) {
+      if (horario) validarHorario(horario);
+      const barbero = await repository.update(id, datos, horario);
       if (!barbero) throw ApiError.notFound('Barbero no encontrado.');
-      return barbero;
+      return { ...barbero, horario: await repository.findHorario(id) };
+    },
+
+    // ¿Puede el barbero atender una cita en [horaInicio, horaFin] de esa fecha? La usa
+    // citas.service.js al agendar/reprogramar, para que ninguna cita caiga fuera del
+    // horario que el administrador le configuró.
+    async assertAtiende({ barberoId, fecha, horaInicio, horaFin }) {
+      const dia = diaSemanaDe(fecha);
+      const bloques = await repository.findHorarioDelDia(barberoId, dia);
+      if (bloques.length === 0) {
+        throw ApiError.conflict(`El barbero no atiende los ${DIAS[dia]}. Elige otro día.`);
+      }
+      const inicio = horaInicio.slice(0, 5);
+      const fin = horaFin.slice(0, 5);
+      const cabe = fin > inicio && bloques.some((b) => inicio >= b.hora_inicio && fin <= b.hora_fin);
+      if (!cabe) {
+        throw ApiError.conflict('Ese horario está fuera del horario de atención del barbero.');
+      }
     },
 
     async deactivate(id) {
@@ -75,7 +149,10 @@ export function createBarberosService({ repository }) {
       citas.forEach((c) => {
         slotsCubiertos(c.hora_inicio, c.hora_fin).forEach((s) => ocupadas.add(s));
       });
-      return { ocupadas: Array.from(ocupadas).sort() };
+      // `trabaja` y `bloques` le dicen al frontend qué horas ofrecer ese día según el
+      // horario del barbero (si no trabaja ese día, no hay horas que mostrar).
+      const bloques = await repository.findHorarioDelDia(barberoId, diaSemanaDe(fecha));
+      return { ocupadas: Array.from(ocupadas).sort(), trabaja: bloques.length > 0, bloques };
     },
   };
 }

@@ -23,7 +23,15 @@ export async function listAll(req, res, next) {
 
 export async function getOne(req, res, next) {
   try {
-    res.json(await service.getById(req.params.id));
+    res.json(await service.getDetalle(req.params.id));
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getHorario(req, res, next) {
+  try {
+    res.json(await service.getHorario(req.params.id));
   } catch (err) {
     next(err);
   }

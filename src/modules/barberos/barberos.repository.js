@@ -38,7 +38,7 @@ export async function findByUserId(userId) {
   return rows[0] || null;
 }
 
-export async function createWithUser({ nombre, especialidad, email, passwordHash }) {
+export async function createWithUser({ nombre, especialidad, email, passwordHash, horario }) {
   const client = await getClient();
   try {
     await client.query('BEGIN');
@@ -52,14 +52,7 @@ export async function createWithUser({ nombre, especialidad, email, passwordHash
       `INSERT INTO barberos (id, user_id, nombre, especialidad) VALUES ($1, $2, $3, $4) RETURNING *`,
       [barberoId, userId, nombre, especialidad || null]
     );
-    // Horario por defecto de la barbería: domingo(0) a jueves(4), 9:00-19:00.
-    for (const dia of [0, 1, 2, 3, 4]) {
-      await client.query(
-        `INSERT INTO disponibilidad_barberos (id, barbero_id, dia_semana, hora_inicio, hora_fin)
-         VALUES ($1, $2, $3, '09:00', '19:00')`,
-        [randomUUID(), barberoId, dia]
-      );
-    }
+    await insertarHorario(client, barberoId, horario);
     await client.query('COMMIT');
     return rows[0];
   } catch (err) {
@@ -70,15 +63,63 @@ export async function createWithUser({ nombre, especialidad, email, passwordHash
   }
 }
 
-export async function update(id, { nombre, especialidad }) {
+async function insertarHorario(client, barberoId, horario) {
+  for (const bloque of horario) {
+    await client.query(
+      `INSERT INTO disponibilidad_barberos (id, barbero_id, dia_semana, hora_inicio, hora_fin)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [randomUUID(), barberoId, bloque.dia_semana, bloque.hora_inicio, bloque.hora_fin]
+    );
+  }
+}
+
+// Datos del barbero y, si se manda `horario`, reemplazo completo de su horario semanal.
+// Va en una transacción: si el horario falla, tampoco se guardan los datos (UC-23).
+export async function update(id, { nombre, especialidad }, horario) {
+  const client = await getClient();
+  try {
+    await client.query('BEGIN');
+    const { rows } = await client.query(
+      `UPDATE barberos
+       SET nombre = COALESCE($2, nombre), especialidad = COALESCE($3, especialidad), updated_at = now()
+       WHERE id = $1
+       RETURNING *`,
+      [id, nombre, especialidad]
+    );
+    if (rows[0] && horario) {
+      await client.query('DELETE FROM disponibilidad_barberos WHERE barbero_id = $1', [id]);
+      await insertarHorario(client, id, horario);
+    }
+    await client.query('COMMIT');
+    return rows[0] || null;
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+export async function findHorario(barberoId) {
   const { rows } = await query(
-    `UPDATE barberos
-     SET nombre = COALESCE($2, nombre), especialidad = COALESCE($3, especialidad), updated_at = now()
-     WHERE id = $1
-     RETURNING *`,
-    [id, nombre, especialidad]
+    `SELECT dia_semana, to_char(hora_inicio, 'HH24:MI') AS hora_inicio, to_char(hora_fin, 'HH24:MI') AS hora_fin
+     FROM disponibilidad_barberos
+     WHERE barbero_id = $1
+     ORDER BY dia_semana, hora_inicio`,
+    [barberoId]
   );
-  return rows[0] || null;
+  return rows;
+}
+
+export async function findHorarioDelDia(barberoId, diaSemana) {
+  const { rows } = await query(
+    `SELECT to_char(hora_inicio, 'HH24:MI') AS hora_inicio, to_char(hora_fin, 'HH24:MI') AS hora_fin
+     FROM disponibilidad_barberos
+     WHERE barbero_id = $1 AND dia_semana = $2
+     ORDER BY hora_inicio`,
+    [barberoId, diaSemana]
+  );
+  return rows;
 }
 
 export async function setActive(id, isActive) {

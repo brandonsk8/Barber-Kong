@@ -10,6 +10,7 @@ const router = Router();
 router.get('/', controller.list);
 router.get('/admin', requireAuth, requireRole('admin'), controller.listAll);
 router.get('/:id', controller.getOne);
+router.get('/:id/horario', controller.getHorario);
 router.get('/:id/disponibilidad', controller.getDisponibilidad);
 
 router.post('/', requireAuth, requireRole('admin'), controller.create);
