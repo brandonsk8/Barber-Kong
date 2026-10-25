@@ -140,6 +140,7 @@ function bloqueDetalles(detalles, acento) {
 //   codigo   -> string, se muestra grande (2FA)
 //   vence    -> "10 minutos", acompaña al código
 //   accion   -> { texto, url }, botón principal
+//   textos   -> { encabezado, intro, ayuda } para reemplazar los textos del tipo de evento
 //   nota     -> línea corta y discreta bajo el botón/código (p. ej. "El enlace vence en 1 hora.")
 //   cita     -> { servicio, barbero, fecha, hora }, se arma la tarjeta con fecha/hora legibles
 //   insumo   -> { nombre, disponible, unidad, minimo }, tarjeta de la alerta de stock
@@ -148,10 +149,12 @@ function bloqueDetalles(detalles, acento) {
 function detallesDe(datos) {
   if (datos.detalles?.length) return datos.detalles;
   if (datos.cita) {
-    const { servicio, barbero, fecha, hora } = datos.cita;
+    const { cliente, servicio, barbero, fecha, hora } = datos.cita;
+    // `cliente` solo lo manda el aviso al barbero; `barbero` solo el aviso al cliente.
     return [
+      ...(cliente ? [['Cliente', cliente]] : []),
       ['Servicio', servicio],
-      ['Barbero', barbero],
+      ...(barbero ? [['Barbero', barbero]] : []),
       ['Fecha', formatFecha(fecha)],
       ['Hora', formatHora(hora)],
     ];
@@ -170,7 +173,9 @@ function detallesDe(datos) {
 
 export function renderEmail({ tipo, titulo, mensaje, datos = {} }) {
   const detalles = detallesDe(datos);
-  const cfg = { ...TIPO_GENERICO, ...(TIPOS[tipo] || {}) };
+  // `datos.textos` ({ encabezado, intro, ayuda }) permite que un mismo tipo de evento diga
+  // otra cosa según a quién va dirigido (p. ej. cita confirmada: al cliente vs. al barbero).
+  const cfg = { ...TIPO_GENERICO, ...(TIPOS[tipo] || {}), ...(datos.textos || {}) };
   const acento = cfg.acento || COLORES.dorado;
   const encabezado = cfg.encabezado || titulo;
   const intro = cfg.intro || mensaje;

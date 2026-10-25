@@ -74,6 +74,24 @@ export function createCitasService({ repository }) {
         });
       }
 
+      // El barbero asignado también se entera (UC-04): le llega a su centro de
+      // notificaciones y por correo, aunque el cliente no tenga correo.
+      await notify({
+        userId: barbero.user_id,
+        email: barbero.email,
+        tipo: 'confirmacion_cita',
+        titulo: 'Nueva cita agendada — Barber Kong',
+        mensaje: `${cliente.nombre} agendó "${servicio.nombre}" contigo para el ${fecha} a las ${horaInicio}.`,
+        datos: {
+          textos: {
+            encabezado: 'Tienes una nueva cita',
+            intro: 'Un cliente acaba de agendar contigo:',
+            ayuda: 'Revisa tu agenda para ver todas tus citas del día.',
+          },
+          cita: { cliente: cliente.nombre, servicio: servicio.nombre, fecha, hora: horaInicio },
+        },
+      });
+
       return cita;
     },
 
