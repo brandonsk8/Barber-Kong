@@ -26,6 +26,9 @@ const HORARIO_POR_DEFECTO = [0, 1, 2, 3, 4].map((dia) => ({
   hora_fin: '19:00',
 }));
 
+// 'lunes' ya es plural; 'domingo' y 'sábado' necesitan la 's' ("los domingos").
+const enPlural = (dia) => (dia.endsWith('s') ? dia : `${dia}s`);
+
 // 0 = domingo ... 6 = sábado, igual que disponibilidad_barberos.dia_semana. Se calcula
 // en UTC a propósito: la fecha ya es solo-día y no debe correrse por zona horaria.
 function diaSemanaDe(fecha) {
@@ -135,7 +138,7 @@ export function createBarberosService({ repository }) {
       const dia = diaSemanaDe(fecha);
       const bloques = await repository.findHorarioDelDia(barberoId, dia);
       if (bloques.length === 0) {
-        throw ApiError.conflict(`El barbero no atiende los ${DIAS[dia]}. Elige otro día.`);
+        throw ApiError.conflict(`El barbero no atiende los ${enPlural(DIAS[dia])}. Elige otro día.`);
       }
       const inicio = horaInicio.slice(0, 5);
       const fin = horaFin.slice(0, 5);
