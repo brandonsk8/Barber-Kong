@@ -201,7 +201,7 @@ export function renderEmail({ tipo, titulo, mensaje, datos = {} }) {
     <tr><td align="center" style="padding:24px 12px;">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">
         <tr><td align="center" style="background:${COLORES.oscuro};border-radius:12px 12px 0 0;padding:22px 16px;">
-          <span style="font-family:Georgia,'Times New Roman',serif;font-size:26px;color:#f3ede2;">Barber<span style="color:${COLORES.dorado};">Kong</span></span>
+          <span style="font-family:Georgia,'Times New Roman',serif;font-size:26px;color:#f3ede2;">Barber <span style="color:${COLORES.dorado};">Kongs</span></span>
         </td></tr>
         <tr><td style="background:${COLORES.tarjeta};padding:30px 28px;border:1px solid ${COLORES.borde};border-top:0;border-radius:0 0 12px 12px;">
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
