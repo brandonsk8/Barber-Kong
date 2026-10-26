@@ -34,6 +34,23 @@ barberos demo, todos con la contraseña `BarberKong2026!`.
 | `npm start` | Servidor en modo producción, contra `.env.prod` |
 | `npm run db:setup` | Crea la BD de desarrollo si no existe y aplica schema + seed |
 | `npm run db:reset` | `DROP SCHEMA public CASCADE` + recrea todo desde cero (desarrollo) |
+| `npm run db:setup:test` | Crea/actualiza la base de pruebas (`barber_kong_test`, según `.env.test`) |
+| `npm test` | Suite completa (unitarias + integración) con Vitest |
+| `npm run test:unit` / `test:integration` | Solo una de las dos capas (las unitarias no necesitan BD) |
+| `npm run test:cov` | Suite con reporte de cobertura (`coverage/`) |
+| `npm run test:carga` | Carga (20 usuarios concurrentes) y reservas simultáneas contra la base de pruebas; manual, no entra en `npm test` |
+
+## Pruebas
+
+```bash
+cp .env.example .env.test     # DB_NAME debe terminar en _test (p. ej. barber_kong_test)
+npm run db:setup:test         # una vez, y cada vez que haya migraciones nuevas
+npm test
+```
+
+Las pruebas de integración usan la app real contra Postgres real y limpian lo que crean.
+Por seguridad se niegan a correr si la base no se llama `*_test`. El correo está
+mockeado: nunca se envían mensajes de verdad. Más detalle en [CLAUDE.md](./CLAUDE.md).
 
 ## Base de datos: sin ORM
 

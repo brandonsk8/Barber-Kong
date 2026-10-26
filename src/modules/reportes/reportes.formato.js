@@ -193,7 +193,7 @@ function valorExcel(formato, valor) {
 export async function construirExcel({ tipo, data, rango }) {
   const def = definirReporte(tipo, data);
   const libro = new ExcelJS.Workbook();
-  libro.creator = 'Barber Kong';
+  libro.creator = 'Barber Kongs';
   libro.created = new Date();
 
   def.secciones.forEach((sec, indice) => {
@@ -209,7 +209,7 @@ export async function construirExcel({ tipo, data, rango }) {
     // Banda de título
     unir(1);
     const titulo = hoja.getCell(1, 1);
-    titulo.value = `Barber Kong  ·  ${def.titulo}`;
+    titulo.value = `Barber Kongs  ·  ${def.titulo}`;
     titulo.font = { name: 'Calibri', size: 16, bold: true, color: rgb(C.dorado) };
     titulo.fill = relleno(C.oscuro);
     titulo.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
@@ -342,8 +342,8 @@ function dibujarEncabezadoPdf(doc, def, rango) {
   doc.rect(0, 84, ancho, 3).fill(hexPdf(C.dorado));
 
   doc.font('Times-Roman').fontSize(24).fillColor(hexPdf(C.claro));
-  doc.text('Barber', MARGEN, 26, { continued: true, lineBreak: false });
-  doc.fillColor(hexPdf(C.dorado)).text('Kong', { lineBreak: false });
+  doc.text('Barber ', MARGEN, 26, { continued: true, lineBreak: false });
+  doc.fillColor(hexPdf(C.dorado)).text('Kongs', { lineBreak: false });
 
   doc.font('Helvetica-Bold').fontSize(14).fillColor(hexPdf(C.claro));
   doc.text(def.titulo, MARGEN, 24, { width: util, align: 'right', lineBreak: false });
@@ -463,7 +463,7 @@ export function construirPDF({ tipo, data, rango }) {
     size: 'A4',
     margin: MARGEN,
     bufferPages: true,
-    info: { Title: `Barber Kong — ${def.titulo}`, Author: 'Barber Kong' },
+    info: { Title: `Barber Kongs — ${def.titulo}`, Author: 'Barber Kongs' },
   });
 
   const trozos = [];
@@ -494,7 +494,7 @@ export function construirPDF({ tipo, data, rango }) {
     doc.page.margins.bottom = 0;
     const yPie = doc.page.height - 32;
     doc.font('Helvetica').fontSize(8).fillColor(hexPdf(C.atenuado));
-    doc.text(`Barber Kong · ${def.titulo}`, MARGEN, yPie, { width: util / 2, align: 'left', lineBreak: false });
+    doc.text(`Barber Kongs · ${def.titulo}`, MARGEN, yPie, { width: util / 2, align: 'left', lineBreak: false });
     doc.text(`Página ${i + 1} de ${count}`, MARGEN + util / 2, yPie, { width: util / 2, align: 'right', lineBreak: false });
     doc.page.margins.bottom = margenAbajo;
   }

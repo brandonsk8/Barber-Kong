@@ -39,3 +39,15 @@ export const crearWalkinSchema = {
   required: ['servicio_id', 'barbero_id', 'fecha', 'hora_inicio'],
   additionalProperties: false,
 };
+
+// GET /api/citas: barbero_id+fecha (agenda de un día) o desde+hasta (rango).
+export const listarCitasQuerySchema = {
+  type: 'object',
+  properties: {
+    barbero_id: { type: 'string', format: 'uuid', errorMessage: 'barbero_id debe ser un identificador válido.' },
+    fecha: { type: 'string', format: 'date', errorMessage: 'La fecha debe tener el formato AAAA-MM-DD.' },
+    desde: { type: 'string', format: 'date', errorMessage: 'La fecha inicial debe tener el formato AAAA-MM-DD.' },
+    hasta: { type: 'string', format: 'date', errorMessage: 'La fecha final debe tener el formato AAAA-MM-DD.' },
+  },
+  additionalProperties: true,
+};
