@@ -7,6 +7,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { logger } from '../config/logger.js';
+import { PARAMS_UUID, validarUuid } from '../middlewares/params.middleware.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -28,6 +29,8 @@ export async function mountModules(app) {
 
   for (const { filePath, prefix } of routeFiles) {
     const mod = await import(pathToFileURL(filePath).href);
+    // Los ids de ruta se validan igual en todos los módulos, sin repetirlo en cada router.
+    PARAMS_UUID.forEach((nombre) => mod.default.param(nombre, validarUuid));
     app.use(`/api${prefix}`, mod.default);
     logger.info(`Montado /api${prefix} -> ${path.relative(path.resolve(__dirname, '..'), filePath)}`);
   }
