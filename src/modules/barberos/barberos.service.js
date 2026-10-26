@@ -99,10 +99,11 @@ export function createBarberosService({ repository }) {
       return repository.findByUserId(userId);
     },
 
-    // Barbero con su horario semanal, para el formulario de edición del administrador.
+    // Barbero con su horario semanal (endpoint público). No incluye el correo ni el id de
+    // su cuenta de acceso: getById los conserva porque otros flujos los necesitan.
     async getDetalle(id) {
-      const barbero = await this.getById(id);
-      return { ...barbero, horario: await repository.findHorario(id) };
+      const { email, user_id: userId, ...publico } = await this.getById(id);
+      return { ...publico, horario: await repository.findHorario(id) };
     },
 
     async getHorario(id) {

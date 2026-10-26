@@ -70,7 +70,7 @@ export async function cancelar(req, res, next) {
 
 export async function marcarAtendida(req, res, next) {
   try {
-    res.json(await service.marcarAtendida(req.params.id));
+    res.json(await service.marcarAtendida(req.params.id, req.user));
   } catch (err) {
     next(err);
   }
@@ -82,12 +82,12 @@ export async function listar(req, res, next) {
   try {
     const { barbero_id: barberoId, fecha, desde, hasta } = req.query;
     if (barberoId && fecha) {
-      return res.json(await service.agendaDelDia(barberoId, fecha));
+      return res.json(await service.agendaDelDia(barberoId, fecha, req.user));
     }
     if (!desde || !hasta) {
       throw ApiError.badRequest('Especificá barbero_id+fecha, o desde+hasta.');
     }
-    res.json(await service.listarPorRango({ desde, hasta, barberoId }));
+    res.json(await service.listarPorRango({ desde, hasta, barberoId }, req.user));
   } catch (err) {
     next(err);
   }

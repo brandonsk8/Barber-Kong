@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   getClient: vi.fn(),
   notify: vi.fn(),
   assertAtiende: vi.fn(),
+  getByUserId: vi.fn(),
   descontarPorServicio: vi.fn(),
   notificarStockBajo: vi.fn(),
 }));
@@ -13,7 +14,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('../../src/config/db.js', () => ({ getClient: mocks.getClient, query: vi.fn(), pool: {} }));
 vi.mock('../../src/services/notification.service.js', () => ({ notify: mocks.notify }));
 vi.mock('../../src/modules/barberos/barberos.instance.js', () => ({
-  barberosService: { assertAtiende: mocks.assertAtiende },
+  barberosService: { assertAtiende: mocks.assertAtiende, getByUserId: mocks.getByUserId },
 }));
 vi.mock('../../src/modules/inventario/inventario.instance.js', () => ({
   inventarioService: {
@@ -27,6 +28,7 @@ import { createCitasService } from '../../src/modules/citas/citas.service.js';
 const FUTURO = '2999-01-01';
 const SERVICIO = { id: 's-1', nombre: 'Corte clásico', duracion_minutos: 30, is_active: true };
 const BARBERO = { id: 'b-1', user_id: 'u-barbero', nombre: 'José M.', email: 'jose@x.com', is_active: true };
+const ADMIN = { id: 'u-admin', role: 'admin' };
 const CLIENTE = { id: 'c-1', nombre: 'Marta López', correo: 'marta@x.com' };
 
 function fakeRepository(overrides = {}) {
@@ -150,7 +152,7 @@ describe('citas.service — marcar atendida (descuento de inventario en una tran
     mocks.descontarPorServicio.mockResolvedValue(alertas);
     const repository = fakeRepository({ findById: vi.fn().mockResolvedValue(CITA) });
 
-    await createCitasService({ repository }).marcarAtendida('cita-1');
+    await createCitasService({ repository }).marcarAtendida('cita-1', ADMIN);
 
     expect(sentencias()).toEqual(['BEGIN', 'COMMIT']);
     expect(repository.setEstadoTx).toHaveBeenCalledWith(client, 'cita-1', 'atendida');
@@ -167,7 +169,7 @@ describe('citas.service — marcar atendida (descuento de inventario en una tran
     mocks.descontarPorServicio.mockRejectedValue(new Error('falló el descuento'));
     const repository = fakeRepository({ findById: vi.fn().mockResolvedValue(CITA) });
 
-    await expect(createCitasService({ repository }).marcarAtendida('cita-1')).rejects.toThrow('falló el descuento');
+    await expect(createCitasService({ repository }).marcarAtendida('cita-1', ADMIN)).rejects.toThrow('falló el descuento');
 
     expect(sentencias()).toEqual(['BEGIN', 'ROLLBACK']);
     expect(client.release).toHaveBeenCalledTimes(1);
@@ -177,7 +179,7 @@ describe('citas.service — marcar atendida (descuento de inventario en una tran
   it('una cita ya atendida no vuelve a descontar (ni abre transacción)', async () => {
     const repository = fakeRepository({ findById: vi.fn().mockResolvedValue({ ...CITA, estado: 'atendida' }) });
 
-    await createCitasService({ repository }).marcarAtendida('cita-1');
+    await createCitasService({ repository }).marcarAtendida('cita-1', ADMIN);
 
     expect(mocks.getClient).not.toHaveBeenCalled();
     expect(mocks.descontarPorServicio).not.toHaveBeenCalled();
@@ -187,9 +189,61 @@ describe('citas.service — marcar atendida (descuento de inventario en una tran
     const cancelada = fakeRepository({ findById: vi.fn().mockResolvedValue({ ...CITA, estado: 'cancelada' }) });
     const noExiste = fakeRepository({ findById: vi.fn().mockResolvedValue(null) });
 
-    await expect(createCitasService({ repository: cancelada }).marcarAtendida('x')).rejects.toMatchObject({ status: 409 });
-    await expect(createCitasService({ repository: noExiste }).marcarAtendida('x')).rejects.toMatchObject({ status: 404 });
+    await expect(createCitasService({ repository: cancelada }).marcarAtendida('x', ADMIN)).rejects.toMatchObject({ status: 409 });
+    await expect(createCitasService({ repository: noExiste }).marcarAtendida('x', ADMIN)).rejects.toMatchObject({ status: 404 });
     expect(mocks.getClient).not.toHaveBeenCalled();
+  });
+
+  it('un barbero solo marca como atendidas sus propias citas', async () => {
+    mocks.getByUserId.mockResolvedValue({ id: 'b-1' });
+    const ajena = fakeRepository({ findById: vi.fn().mockResolvedValue({ ...CITA, barbero_id: 'b-2' }) });
+    const propia = fakeRepository({ findById: vi.fn().mockResolvedValue({ ...CITA, barbero_id: 'b-1' }) });
+    const barbero = { id: 'u-barbero', role: 'barbero' };
+
+    await expect(createCitasService({ repository: ajena }).marcarAtendida('cita-1', barbero)).rejects.toMatchObject({ status: 403 });
+    expect(mocks.getClient).not.toHaveBeenCalled();
+
+    await createCitasService({ repository: propia }).marcarAtendida('cita-1', barbero);
+    expect(mocks.descontarPorServicio).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('citas.service — agenda de un barbero', () => {
+  const barbero = { id: 'u-barbero', role: 'barbero' };
+
+  beforeEach(() => mocks.getByUserId.mockResolvedValue({ id: 'b-1' }));
+
+  it('un barbero consulta su propia agenda, del día o por rango', async () => {
+    const repository = fakeRepository({ findByBarberoYFecha: vi.fn().mockResolvedValue([]), findByRango: vi.fn().mockResolvedValue([]) });
+    const service = createCitasService({ repository });
+
+    await service.agendaDelDia('b-1', FUTURO, barbero);
+    await service.listarPorRango({ desde: FUTURO, hasta: FUTURO, barberoId: 'b-1' }, barbero);
+
+    expect(repository.findByBarberoYFecha).toHaveBeenCalledWith('b-1', FUTURO);
+    expect(repository.findByRango).toHaveBeenCalledTimes(1);
+  });
+
+  it('un barbero no puede ver la agenda de otro ni el listado de todos', async () => {
+    const repository = fakeRepository({ findByBarberoYFecha: vi.fn(), findByRango: vi.fn() });
+    const service = createCitasService({ repository });
+
+    await expect(service.agendaDelDia('b-2', FUTURO, barbero)).rejects.toMatchObject({ status: 403 });
+    await expect(service.listarPorRango({ desde: FUTURO, hasta: FUTURO, barberoId: 'b-2' }, barbero)).rejects.toMatchObject({ status: 403 });
+    await expect(service.listarPorRango({ desde: FUTURO, hasta: FUTURO }, barbero)).rejects.toMatchObject({ status: 403 });
+    expect(repository.findByBarberoYFecha).not.toHaveBeenCalled();
+    expect(repository.findByRango).not.toHaveBeenCalled();
+  });
+
+  it('el administrador consulta la agenda de cualquiera y el listado global', async () => {
+    const repository = fakeRepository({ findByBarberoYFecha: vi.fn().mockResolvedValue([]), findByRango: vi.fn().mockResolvedValue([]) });
+    const service = createCitasService({ repository });
+
+    await service.agendaDelDia('b-2', FUTURO, ADMIN);
+    await service.listarPorRango({ desde: FUTURO, hasta: FUTURO }, ADMIN);
+
+    expect(mocks.getByUserId).not.toHaveBeenCalled();
+    expect(repository.findByRango).toHaveBeenCalledTimes(1);
   });
 });
 

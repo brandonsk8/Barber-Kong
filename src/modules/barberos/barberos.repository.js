@@ -4,12 +4,13 @@
 import { randomUUID } from 'node:crypto';
 import { getClient, query } from '../../config/db.js';
 
+// Catálogo público: no expone el correo (usuario de acceso) del barbero.
 export async function findAllActive() {
   const { rows } = await query(
-    `SELECT b.id, b.nombre, b.especialidad, b.is_active, u.email
-     FROM barberos b JOIN users u ON u.id = b.user_id
-     WHERE b.is_active = TRUE
-     ORDER BY b.nombre`
+    `SELECT id, nombre, especialidad, is_active
+     FROM barberos
+     WHERE is_active = TRUE
+     ORDER BY nombre`
   );
   return rows;
 }
@@ -122,12 +123,31 @@ export async function findHorarioDelDia(barberoId, diaSemana) {
   return rows;
 }
 
+// Activar o desactivar al barbero también activa o desactiva su cuenta de acceso: un
+// barbero dado de baja no debe poder seguir iniciando sesión. Una sola transacción para
+// que perfil y cuenta no queden en estados distintos.
 export async function setActive(id, isActive) {
-  const { rows } = await query(
-    `UPDATE barberos SET is_active = $2, updated_at = now() WHERE id = $1 RETURNING *`,
-    [id, isActive]
-  );
-  return rows[0] || null;
+  const client = await getClient();
+  try {
+    await client.query('BEGIN');
+    const { rows } = await client.query(
+      `UPDATE barberos SET is_active = $2, updated_at = now() WHERE id = $1 RETURNING *`,
+      [id, isActive]
+    );
+    if (rows[0]) {
+      await client.query(`UPDATE users SET is_active = $2, updated_at = now() WHERE id = $1`, [
+        rows[0].user_id,
+        isActive,
+      ]);
+    }
+    await client.query('COMMIT');
+    return rows[0] || null;
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
 }
 
 // Citas no canceladas de un barbero en una fecha, para calcular disponibilidad.
