@@ -1,0 +1,56 @@
+# Aplica las migraciones pendientes contra la base de producción (Supabase) en cada
+# push a main. Corre en paralelo al despliegue automático de Vercel (no lo bloquea ni
+# lo reemplaza) — por eso solo tiene sentido con migraciones compatibles hacia atrás:
+# agregar columnas/tablas antes de que el código las use, nunca quitar de golpe algo
+# que el código en producción todavía necesita.
+#
+# Requiere estos secretos en Settings → Secrets and variables → Actions:
+#   PROD_DB_HOST      host del SESSION POOLER de Supabase (puerto 5432, IPv4) —
+#                      NO el host de conexión directa (db.<ref>.supabase.co, solo IPv6)
+#                      ni el transaction pooler (puerto 6543): el runner usa
+#                      pg_advisory_lock, que necesita una conexión de sesión.
+#                      Formato típico: aws-0-<region>.pooler.supabase.com
+#   PROD_DB_NAME      normalmente "postgres"
+#   PROD_MIGRATOR_USER      usuario de conexión del pooler, formato
+#                            postgres.<project-ref> (confirmalo en Supabase →
+#                            Project Settings → Database → Connect)
+#   PROD_MIGRATOR_PASSWORD  la contraseña de ese usuario
+#
+# Hoy usa el mismo rol "postgres" que usa la API en producción — separarlo en un rol
+# propio solo para migrar es la Tarea 2 (mínimo privilegio), pendiente aparte.
+name: Migrar base de producción
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      DB_HOST: ${{ secrets.PROD_DB_HOST }}
+      DB_PORT: '5432'
+      DB_NAME: ${{ secrets.PROD_DB_NAME }}
+      DB_USER: ${{ secrets.PROD_MIGRATOR_USER }}
+      DB_PASSWORD: ${{ secrets.PROD_MIGRATOR_PASSWORD }}
+      DB_SSL: 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Estado de las migraciones (antes)
+        run: node scripts/db/migrate.mjs status
+
+      - name: Aplicar migraciones pendientes
+        run: node scripts/db/migrate.mjs
+
+      - name: Estado de las migraciones (después)
+        run: node scripts/db/migrate.mjs status
