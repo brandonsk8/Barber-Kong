@@ -26,16 +26,20 @@ export async function create({ nombre, unidad_medida, cantidad_minima }) {
   return rows[0];
 }
 
-export async function update(id, { nombre, unidad_medida, cantidad_minima }) {
+// Edición parcial: un campo ausente no cambia. `cantidad_minima: null` es distinto de
+// "ausente": quita el mínimo (y con él la alerta de stock bajo).
+export async function update(id, datos) {
+  const { nombre, unidad_medida, cantidad_minima } = datos;
+  const quitarMinimo = Object.hasOwn(datos, 'cantidad_minima') && cantidad_minima === null;
   const { rows } = await query(
     `UPDATE insumos
      SET nombre = COALESCE($2, nombre),
          unidad_medida = COALESCE($3, unidad_medida),
-         cantidad_minima = COALESCE($4, cantidad_minima),
+         cantidad_minima = CASE WHEN $5::boolean THEN NULL ELSE COALESCE($4, cantidad_minima) END,
          updated_at = now()
      WHERE id = $1
      RETURNING *`,
-    [id, nombre, unidad_medida, cantidad_minima]
+    [id, nombre, unidad_medida, cantidad_minima, quitarMinimo]
   );
   return rows[0] || null;
 }
