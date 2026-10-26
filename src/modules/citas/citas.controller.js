@@ -1,6 +1,6 @@
 import * as repository from './citas.repository.js';
 import { createCitasService } from './citas.service.js';
-import { crearCitaSchema, reprogramarCitaSchema, crearWalkinSchema } from './citas.schema.js';
+import { crearCitaSchema, reprogramarCitaSchema, crearWalkinSchema, listarCitasQuerySchema } from './citas.schema.js';
 import { validate } from '../../helpers/validate.js';
 import { ApiError } from '../../helpers/ApiError.js';
 
@@ -80,7 +80,7 @@ export async function marcarAtendida(req, res, next) {
 // GET /api/citas?desde=&hasta=[&barbero_id=]    -> listado por rango (admin)
 export async function listar(req, res, next) {
   try {
-    const { barbero_id: barberoId, fecha, desde, hasta } = req.query;
+    const { barbero_id: barberoId, fecha, desde, hasta } = validate(listarCitasQuerySchema, req.query);
     if (barberoId && fecha) {
       return res.json(await service.agendaDelDia(barberoId, fecha, req.user));
     }
