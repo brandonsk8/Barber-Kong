@@ -44,6 +44,12 @@ export function createCitasService({ repository }) {
     throw ApiError.forbidden('No tienes permiso sobre esta cita.');
   }
 
+  // Un barbero solo opera sobre sus propias citas; el administrador, sobre todas.
+  async function barberoIdPropio(requester) {
+    const propio = await barberosService.getByUserId(requester.id);
+    return propio?.id ?? null;
+  }
+
   return {
     async crear({ userId, servicioId, barberoId, fecha, horaInicio }) {
       const cliente = await repository.findClienteByUserId(userId);
@@ -192,9 +198,12 @@ export function createCitasService({ repository }) {
     // que corren en una sola transacción real (BEGIN/COMMIT/ROLLBACK), no dos queries
     // sueltas. El descuento en sí vive en inventario.service.js (dueño: EP-05); acá solo
     // se orquesta la transacción y se llama a esa función, sin duplicar la lógica.
-    async marcarAtendida(id) {
+    async marcarAtendida(id, requester) {
       const cita = await repository.findById(id);
       if (!cita) throw ApiError.notFound('Cita no encontrada.');
+      if (requester.role === 'barbero' && cita.barbero_id !== (await barberoIdPropio(requester))) {
+        throw ApiError.forbidden('Solo puedes marcar como atendidas tus propias citas.');
+      }
       if (cita.estado === 'atendida') return cita;
       if (cita.estado === 'cancelada') throw ApiError.conflict('Una cita cancelada no se puede marcar como atendida.');
 
@@ -222,11 +231,18 @@ export function createCitasService({ repository }) {
       return repository.findById(id);
     },
 
-    async agendaDelDia(barberoId, fecha) {
+    async agendaDelDia(barberoId, fecha, requester) {
+      if (requester.role === 'barbero' && barberoId !== (await barberoIdPropio(requester))) {
+        throw ApiError.forbidden('Solo puedes consultar tu propia agenda.');
+      }
       return repository.findByBarberoYFecha(barberoId, fecha);
     },
 
-    async listarPorRango({ desde, hasta, barberoId }) {
+    // El listado sin `barbero_id` mezcla las citas de todos: solo para el administrador.
+    async listarPorRango({ desde, hasta, barberoId }, requester) {
+      if (requester.role === 'barbero' && barberoId !== (await barberoIdPropio(requester))) {
+        throw ApiError.forbidden('Solo puedes consultar tu propia agenda.');
+      }
       return repository.findByRango({ desde: desde || hoyISO(), hasta: hasta || hoyISO(), barberoId });
     },
   };
